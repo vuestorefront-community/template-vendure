@@ -1,11 +1,11 @@
 {
-  "name": "@vue-storefront/magento-theme",
-  "version": "1.0.0-rc.3",
+  "name": "@vue-storefront/template-vendure",
+  "version": "1.0.0-beta.1",
   "private": true,
   "license": "MIT",
-  "homepage": "https://github.com/vuestorefront/magento2",
+  "homepage": "docs.vuestorefront.io/vendure/",
   "bugs": {
-    "url": "https://github.com/vuestorefront/magento2/issues"
+    "url": "https://github.com/vuestorefront/vendure/issues"
   },
   "scripts": {
     "build": "nuxt build -m",
