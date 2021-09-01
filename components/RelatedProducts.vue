@@ -28,7 +28,7 @@ import {
   SfLoader
 } from '@storefront-ui/vue';
 
-import { productGetters } from '@vue-storefront/magento';
+import { productGetters } from '@vue-storefront/vendure';
 
 export default {
   name: 'RelatedProducts',

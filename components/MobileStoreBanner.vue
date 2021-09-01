@@ -12,41 +12,39 @@
           aria-label="Go to Apple Product"
           @click="() => {}"
         >
-          <img
+          <SfImage
             src="/homepage/apple.png"
-            width="174"
-            height="57"
-          >
+            alt="App store"
+          />
         </SfButton>
         <SfButton
           class="banner-app__button sf-button--pure"
           aria-label="Go to Google Product"
           @click="() => {}"
         >
-          <img
+          <SfImage
             src="/homepage/google.png"
-            width="174"
-            height="57"
-          >
+            alt="Google play"
+          />
         </SfButton>
       </div>
     </template>
   </SfBanner>
 </template>
-<script lang="ts" type="module">
+<script>
 import {
   SfBanner,
-  SfButton,
+  SfImage,
+  SfButton
 } from '@storefront-ui/vue';
-import { defineComponent } from '@vue/composition-api';
-
-export default defineComponent({
+export default {
   name: 'AppStoreBanner',
   components: {
     SfBanner,
-    SfButton,
-  },
-});
+    SfImage,
+    SfButton
+  }
+};
 </script>
 <style lang="scss" scoped>
 

@@ -5,40 +5,19 @@
       :title="$t('Search results')"
       class="search"
     >
-      <transition
-        name="sf-fade"
-        mode="out-in"
-      >
-        <div
-          v-if="products && products.length > 0"
-          key="results"
-          class="search__wrapper-results"
-        >
-          <SfMegaMenuColumn
-            :title="$t('Categories')"
-            class="sf-mega-menu-column--pined-content-on-mobile search__categories"
-          >
+      <transition name="sf-fade" mode="out-in">
+        <div v-if="products && products.length > 0" class="search__wrapper-results" key="results">
+          <SfMegaMenuColumn :title="$t('Categories')" class="sf-mega-menu-column--pined-content-on-mobile search__categories">
             <template #title="{title}">
-              <SfMenuItem
-                :label="title"
-                @click="megaMenu.changeActive(title)"
-              >
+              <SfMenuItem :label="title" @click="megaMenu.changeActive(title)">
                 <template #mobile-nav-icon>
                   &#8203;
                 </template>
               </SfMenuItem>
             </template>
-            <SfList
-              v-if="categories.length"
-            >
-              <SfListItem
-                v-for="(category, key) in categories"
-                :key="key"
-              >
-                <SfMenuItem
-                  :label="category.label"
-                  :link="th.getAgnosticCatLink(category)"
-                >
+            <SfList>
+              <SfListItem v-for="(category, key) in categories.items" :key="key">
+                <SfMenuItem :label="category.label" :link="`/c/women/${category.slug}`">
                   <template #mobile-nav-icon>
                     &#8203;
                   </template>
@@ -46,25 +25,15 @@
               </SfListItem>
             </SfList>
           </SfMegaMenuColumn>
-          <SfMegaMenuColumn
-            :title="$t('Product suggestions')"
-            class="sf-mega-menu-column--pined-content-on-mobile search__results"
-          >
+          <SfMegaMenuColumn :title="$t('Product suggestions')" class="sf-mega-menu-column--pined-content-on-mobile search__results">
             <template #title="{title}">
-              <SfMenuItem
-                :label="title"
-                class="sf-mega-menu-column__header search__header"
-              >
+              <SfMenuItem :label="title" class="sf-mega-menu-column__header search__header">
                 <template #mobile-nav-icon>
                   &#8203;
                 </template>
               </SfMenuItem>
             </template>
-            <SfScrollable
-              class="results--desktop desktop-only"
-              show-text=""
-              hide-text=""
-            >
+            <SfScrollable class="results--desktop desktop-only" show-text="" hide-text="">
               <div class="results-listing">
                 <SfProductCard
                   v-for="(product, index) in products"
@@ -73,10 +42,10 @@
                   :regular-price="$n(productGetters.getPrice(product).regular, 'currency')"
                   :score-rating="productGetters.getAverageRating(product)"
                   :reviews-count="7"
-                  :image="productGetters.getProductThumbnailImage(product)"
+                  :image="productGetters.getCoverImage(product)"
                   :alt="productGetters.getName(product)"
                   :title="productGetters.getName(product)"
-                  :link="`/p/${productGetters.getProductSku(product)}${productGetters.getSlug(product, product.categories[0])}`"
+                  :link="`/p/${productGetters.getId(product)}/${productGetters.getSlug(product)}`"
                 />
               </div>
             </SfScrollable>
@@ -88,92 +57,63 @@
                 :regular-price="$n(productGetters.getPrice(product).regular, 'currency')"
                 :score-rating="productGetters.getAverageRating(product)"
                 :reviews-count="7"
-                :image="productGetters.getProductThumbnailImage(product)"
+                :image="productGetters.getCoverImage(product)"
                 :alt="productGetters.getName(product)"
                 :title="productGetters.getName(product)"
-                :link="`/p/${productGetters.getProductSku(product)}${productGetters.getSlug(product, product.categories[0])}`"
+                :link="`/p/${productGetters.getId(product)}/${productGetters.getSlug(product)}`"
               />
             </div>
           </SfMegaMenuColumn>
           <div class="action-buttons smartphone-only">
-            <SfButton
-              class="action-buttons__button color-light"
-              @click="$emit('close')"
-            >
-              {{ $t('Cancel') }}
-            </SfButton>
+            <SfButton class="action-buttons__button color-light" @click="$emit('close')">{{ $t('Cancel') }}</SfButton>
           </div>
         </div>
-        <div
-          v-else
-          key="no-results"
-          class="before-results"
-        >
-          <SfImage
-            src="/error/error.svg"
-            class="before-results__picture"
-            alt="error"
-            loading="lazy"
-          />
-          <p class="before-results__paragraph">
-            {{ $t('You haven’t searched for items yet') }}
-          </p>
-          <p class="before-results__paragraph">
-            {{ $t('Let’s start now – we’ll help you') }}
-          </p>
-          <SfButton
-            class="before-results__button color-secondary smartphone-only"
-            @click="$emit('close')"
-          >
-            {{ $t('Go back') }}
-          </SfButton>
+        <div v-else key="no-results" class="before-results">
+          <SfImage src="/error/error.svg" class="before-results__picture" alt="error" loading="lazy"/>
+          <p class="before-results__paragraph">{{ $t('You haven’t searched for items yet') }}</p>
+          <p class="before-results__paragraph">{{ $t('Let’s start now – we’ll help you') }}</p>
+          <SfButton class="before-results__button color-secondary smartphone-only" @click="$emit('close')">{{ $t('Go back') }}</SfButton>
         </div>
       </transition>
     </SfMegaMenu>
   </div>
 </template>
-<script lang="ts">
+<script>
 import {
   SfMegaMenu,
   SfList,
+  SfBanner,
   SfProductCard,
   SfScrollable,
   SfMenuItem,
   SfButton,
-  SfImage,
+  SfImage
 } from '@storefront-ui/vue';
-import {
-  ref,
-  watch,
-  computed,
-  defineComponent,
-} from '@vue/composition-api';
-import { productGetters } from '@vue-storefront/magento';
-import { useUiHelpers } from '~/composables';
+import { ref, watch, computed } from '@vue/composition-api';
+import { productGetters } from '@vue-storefront/vendure';
 
-export default defineComponent({
+export default {
   name: 'SearchResults',
   components: {
     SfMegaMenu,
     SfList,
+    SfBanner,
     SfProductCard,
     SfScrollable,
     SfMenuItem,
     SfButton,
-    SfImage,
+    SfImage
   },
   props: {
     visible: {
       type: Boolean,
-      default: false,
+      default: false
     },
     result: {
-      type: Object,
-      default: () => ({}),
-    },
+      type: Object
+    }
   },
   setup(props, { emit }) {
-    const th = useUiHelpers();
     const isSearchOpen = ref(props.visible);
     const products = computed(() => props.result?.products);
     const categories = computed(() => props.result?.categories);
@@ -189,14 +129,13 @@ export default defineComponent({
     });
 
     return {
-      th,
       isSearchOpen,
       productGetters,
       products,
-      categories,
+      categories
     };
-  },
-});
+  }
+};
 </script>
 <style lang="scss" scoped>
 .search {

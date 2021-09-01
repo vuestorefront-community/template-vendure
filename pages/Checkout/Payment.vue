@@ -7,9 +7,7 @@
     />
     <SfTable class="sf-table--bordered table desktop-only">
       <SfTableHeading class="table__row">
-        <SfTableHeader class="table__header table__image">
-          {{ $t('Item') }}
-        </SfTableHeader>
+        <SfTableHeader class="table__header table__image">{{ $t('Item') }}</SfTableHeader>
         <SfTableHeader
           v-for="tableHeader in tableHeaders"
           :key="tableHeader"
@@ -25,44 +23,19 @@
         class="table__row"
       >
         <SfTableData class="table__image">
-          <SfImage
-            :src="cartGetters.getItemImage(product)"
-            :alt="cartGetters.getItemName(product)"
-          />
+          <SfImage :src="cartGetters.getItemImage(product)" :alt="cartGetters.getItemName(product)" />
         </SfTableData>
         <SfTableData class="table__data table__description table__data">
-          <div class="product-title">
-            {{ cartGetters.getItemName(product) }}
-          </div>
-          <div class="product-sku">
-            {{ cartGetters.getItemSku(product) }}
-          </div>
-          <template
-            v-if="getAttributes(product).length > 0"
-          >
-            <p
-              v-for="attr in getAttributes(product)"
-              :key="attr.option_label"
-              class="detail-information"
-            >
-              <strong>{{ `${attr.option_label}:` }}</strong>{{ `${attr.value_label}` }}
-            </p>
-          </template>
-          <template
-            v-if="getBundles(product).length > 0"
-          >
-            <p
-              v-for="bundle in getBundles(product)"
-              :key="bundle.label"
-              class="detail-information"
-            >
-              {{ `${bundle.quantity}x ${bundle.label}` }}
-            </p>
-          </template>
+          <div class="product-title">{{ cartGetters.getItemName(product) }}</div>
+          <div class="product-sku">{{ cartGetters.getItemSku(product) }}</div>
+          <SfProperty
+            v-for="(attribute, key) in cartGetters.getItemOptions(product)"
+            :key="key"
+            :name="attribute.label"
+            :value="attribute.value"
+          />
         </SfTableData>
-        <SfTableData class="table__data">
-          {{ cartGetters.getItemQty(product) }}
-        </SfTableData>
+        <SfTableData class="table__data">{{ cartGetters.getItemQty(product) }}</SfTableData>
         <SfTableData class="table__data price">
           <SfPrice
             :regular="$n(cartGetters.getItemPrice(product).regular, 'currency')"
@@ -77,56 +50,25 @@
         <div class="summary__total">
           <SfProperty
             name="Subtotal"
-            :value="$n(totals.subtotal, 'currency')"
+            :value="$n(totals.special > 0 ? totals.special : totals.subtotal, 'currency')"
             class="sf-property--full-width property"
           />
-          <SfProperty
-            v-if="hasDiscounts"
-            :name="$t('Discount')"
-            :value="$n(discountsAmount, 'currency')"
-            class="sf-property--full-width sf-property--small property"
-          />
-        </div>
-        <div
-          v-if="selectedShippingMethod"
-          class="summary__total"
-        >
-          <SfProperty
-            :value="$n(getShippingMethodPrice(selectedShippingMethod), 'currency')"
-            class="sf-property--full-width property"
-          >
-            <template #name>
-              <span class="sf-property__name">
-                {{ selectedShippingMethod.carrier_title }} (<small>{{ selectedShippingMethod.method_title }}</small>)
-              </span>
-            </template>
-          </SfProperty>
         </div>
 
         <SfDivider />
 
         <SfProperty
           name="Total price"
-          :value="$n(totals.total, 'currency')"
+          :value="$n(totals.subtotal, 'currency')"
           class="sf-property--full-width sf-property--large summary__property-total"
         />
 
-        <VsfPaymentProvider
-          @status="isPaymentReady = true"
-        />
+        <VsfPaymentProvider @paymentMethodSelected="updatePaymentMethod"/>
 
-        <SfCheckbox
-          v-model="terms"
-          v-e2e="'terms'"
-          name="terms"
-          class="summary__terms"
-        >
+        <SfCheckbox v-e2e="'terms'" v-model="terms" name="terms" class="summary__terms">
           <template #label>
             <div class="sf-checkbox__label">
-              {{ $t('I agree to') }}
-              <SfLink href="#">
-                {{ $t('Terms and conditions') }}
-              </SfLink>
+              {{ $t('I agree to') }} <SfLink href="#"> {{ $t('Terms and conditions') }}</SfLink>
             </div>
           </template>
         </SfCheckbox>
@@ -141,7 +83,7 @@
           </SfButton>
           <SfButton
             v-e2e="'make-an-order'"
-            :disabled="loading || !isPaymentReady || !terms"
+            :disabled="!paymentMethod || !terms"
             class="summary__action-button"
             @click="processOrder"
           >
@@ -153,7 +95,7 @@
   </div>
 </template>
 
-<script lant="ts">
+<script>
 import {
   SfHeading,
   SfTable,
@@ -161,22 +103,19 @@ import {
   SfButton,
   SfDivider,
   SfImage,
+  SfIcon,
   SfPrice,
   SfProperty,
-  SfLink,
+  SfAccordion,
+  SfLink
 } from '@storefront-ui/vue';
-import { onSSR, useVSFContext } from '@vue-storefront/core';
-import { ref, computed, defineComponent } from '@vue/composition-api';
-import {
-  useMakeOrder,
-  useCart,
-  cartGetters,
-} from '@vue-storefront/magento';
-import getShippingMethodPrice from '~/helpers/checkout/getShippingMethodPrice';
-import { useVueRouter } from '~/helpers/hooks/useVueRouter';
+import { onSSR } from '@vue-storefront/core';
+import { ref, computed } from '@vue/composition-api';
+import { useMakeOrder, useCart, cartGetters } from '@vue-storefront/vendure';
+import { useVSFContext } from '@vue-storefront/core';
 
-export default defineComponent({
-  name: 'ReviewOrderAndPayment',
+export default {
+  name: 'ReviewOrder',
   components: {
     SfHeading,
     SfTable,
@@ -184,75 +123,71 @@ export default defineComponent({
     SfButton,
     SfDivider,
     SfImage,
+    SfIcon,
     SfPrice,
     SfProperty,
+    SfAccordion,
     SfLink,
-    VsfPaymentProvider: () => import('~/components/Checkout/VsfPaymentProvider.vue'),
+    VsfPaymentProvider: () => import('~/components/Checkout/VsfPaymentProvider')
   },
-  setup() {
+  setup(props, context) {
     const { cart, load, setCart } = useCart();
-    const { order, make, loading } = useMakeOrder();
-    const { $magento } = useVSFContext();
-    const { router } = useVueRouter();
-    const isPaymentReady = ref(false);
+    const { $vendure } = useVSFContext();
+    const { loading } = useMakeOrder();
+
     const terms = ref(false);
-    const getAttributes = (product) => product.configurable_options || [];
-    const getBundles = (product) => product.bundle_options?.map((b) => b.values).flat() || [];
+    const paymentMethod = ref(null);
 
     onSSR(async () => {
       await load();
     });
 
-    const processOrder = async () => {
-      await make();
-      setCart(null);
-      $magento.config.state.setCartId();
-      await load();
-      await router.push(`/checkout/thank-you?order=${order.value.order_number}`);
+    const updatePaymentMethod = method => {
+      paymentMethod.value = method;
     };
 
-    const discounts = computed(() => cartGetters.getDiscounts(cart.value));
-    const hasDiscounts = computed(() => discounts.value.length > 0);
-    const discountsAmount = computed(() => -1 * discounts.value.reduce((a, el) => el.value + a, 0));
+    const processOrder = async () => {
+      const response = await $vendure.api.setPaymentMethod({
+        method: paymentMethod?.value?.code,
+        metadata: {
+          // Here you would pass data from an external Payment Provided after successful payment process like payment id.
+        }
+      });
+
+      const orderCode = response?.data?.addPaymentToOrder?.code;
+
+      const thankYouPath = { name: 'thank-you', query: { order: orderCode }};
+      context.root.$router.push(context.root.localePath(thankYouPath));
+      setCart(null);
+    };
 
     return {
-      cart,
-      cartGetters,
-      discounts,
-      hasDiscounts,
-      discountsAmount,
-      getShippingMethodPrice,
-      isPaymentReady,
-      loading,
-      processOrder,
-      products: computed(() => cartGetters.getItems(cart.value)),
-      selectedShippingMethod: computed(() => cartGetters.getSelectedShippingMethod(cart.value)),
-      tableHeaders: ['Description', 'Quantity', 'Amount'],
       terms,
+      loading,
+      products: computed(() => cartGetters.getItems(cart.value)),
       totals: computed(() => cartGetters.getTotals(cart.value)),
-      getAttributes,
-      getBundles,
+      tableHeaders: ['Description', 'Quantity', 'Amount'],
+      cartGetters,
+      processOrder,
+      updatePaymentMethod,
+      paymentMethod
     };
-  },
-});
+  }
+};
 </script>
 
 <style lang="scss" scoped>
 .title {
   margin: var(--spacer-xl) 0 var(--spacer-base) 0;
 }
-
 .table {
   margin: 0 0 var(--spacer-base) 0;
-
   &__row {
     justify-content: space-between;
   }
-
   @include for-desktop {
     &__header {
       text-align: center;
-
       &:last-child {
         text-align: right;
       }
@@ -271,42 +206,33 @@ export default defineComponent({
     }
   }
 }
-.detail-information {
-  margin: 0 !important;
-  font-size: var(--font-size--sm);
-}
 .product-sku {
   color: var(--c-text-muted);
   font-size: var(--font-size--sm);
+  margin-bottom: var(--spacer-base);
 }
-
 .price {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
 }
-
 .product-price {
   --price-font-size: var(--font-size--base);
 }
-
 .summary {
   &__terms {
     margin: var(--spacer-base) 0 0 0;
   }
-
   &__total {
     margin: 0 0 var(--spacer-sm) 0;
     flex: 0 0 16.875rem;
   }
-
   &__action {
     @include for-desktop {
       display: flex;
       margin: var(--spacer-xl) 0 0 0;
     }
   }
-
   &__action-button {
     margin: 0;
     width: 100%;
@@ -315,14 +241,12 @@ export default defineComponent({
       margin: 0 var(--spacer-xl) 0 0;
       width: auto;
     }
-
     &--secondary {
       @include for-desktop {
         text-align: right;
       }
     }
   }
-
   &__back-button {
     margin: var(--spacer-xl) 0 0 0;
     width: 100%;
@@ -330,51 +254,40 @@ export default defineComponent({
       margin: 0 var(--spacer-xl) 0 0;
       width: auto;
     }
-    color: var(--c-white);
-
+    color:  var(--c-white);
     &:hover {
-      color: var(--c-white);
+      color:  var(--c-white);
     }
   }
-
   &__property-total {
     margin: var(--spacer-xl) 0 0 0;
   }
 }
-
 .property {
   margin: 0 0 var(--spacer-sm) 0;
-
   &__name {
     color: var(--c-text-muted);
   }
 }
-
 .accordion {
   margin: 0 0 var(--spacer-xl) 0;
-
   &__item {
     display: flex;
     align-items: flex-start;
   }
-
   &__content {
     flex: 1;
   }
-
   &__edit {
     flex: unset;
   }
 }
-
 .content {
   margin: 0 0 var(--spacer-xl) 0;
   color: var(--c-text);
-
   &:last-child {
     margin: 0;
   }
-
   &__label {
     font-weight: var(--font-weight--normal);
   }

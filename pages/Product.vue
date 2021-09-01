@@ -4,15 +4,11 @@
       class="breadcrumbs desktop-only"
       :breadcrumbs="breadcrumbs"
     />
-    <div
-      class="product"
-    >
+    <div class="product">
       <LazyHydrate when-idle>
-        <SfGallery
-          :images="productGallery"
-          class="product__gallery"
-        />
+        <SfGallery :images="productGallery" class="product__gallery" />
       </LazyHydrate>
+
       <div class="product__info">
         <div class="product__header">
           <SfHeading
@@ -29,8 +25,7 @@
         </div>
         <div class="product__price-and-rating">
           <SfPrice
-            :regular="$n(productPrice, 'currency')"
-            :special="productSpecialPrice && $n(productSpecialPrice, 'currency')"
+            :regular="$n(productGetters.getPrice(product).regular, 'currency')"
           />
           <div>
             <div class="product__rating">
@@ -38,166 +33,67 @@
                 :score="averageRating"
                 :max="5"
               />
-              <a
-                v-if="!!totalReviews"
-                href="#"
-                class="product__count"
-              >
+              <a v-if="!!totalReviews" href="#" class="product__count">
                 ({{ totalReviews }})
               </a>
             </div>
-            <SfButton
-              class="sf-button--text"
-              @click="changeTab(2)"
-            >
-              {{ $t('Read all reviews') }}
-            </SfButton>
-            |
-            <SfButton
-              class="sf-button--text"
-              @click="changeNewReview"
-            >
-              Add a review
-            </SfButton>
+            <SfButton class="sf-button--text">{{ $t('Read all reviews') }}</SfButton>
           </div>
         </div>
         <div>
-          <p
-            v-if="productShortDescription"
-            v-dompurify-html="productShortDescription"
-            class="product__description desktop-only"
-          />
-          <SfButton class="sf-button--text desktop-only product__guide">
-            {{ $t('Size guide') }}
-          </SfButton>
-          <template
-            v-for="option in configurableOptions"
-          >
-            <div
-              v-if="option.attribute_code === 'color'"
-              :key="option.uid"
-              class="product__colors desktop-only"
-            >
-              <p class="product__color-label">
-                {{ option.label }}:
-              </p>
-              <SfColor
-                v-for="color in option.values"
-                :key="color.uid"
-                :color="productGetters.getSwatchData(color.swatch_data)"
-                :selected="productConfiguration[option.attribute_uid] === color.uid"
-                class="product__color"
-                @click="() => updateProductConfiguration(option.attribute_uid, color.uid)"
-              />
-            </div>
+          <p class="product__description desktop-only">
+            {{ productGetters.getDescription(product) }}
+          </p>
+          <div v-if="options && options.length">
             <SfSelect
-              v-else
-              :key="option.uid"
-              :value="productConfiguration[option.attribute_uid]"
-              :label="option.label"
+              v-for="optionGroup in options"
+              :key="optionGroup.id"
+              v-model="configuration[optionGroup.value]"
+              @input="option => updateFilter({ [optionGroup.value]: option })"
+              :label="optionGroup.label"
               class="sf-select--underlined product__select-size"
               :required="true"
-              @input="($event) => updateProductConfiguration(option.attribute_uid, $event)"
             >
               <SfSelectOption
-                v-for="attribute in option.values"
-                :key="attribute.uid"
-                :value="attribute.uid"
+                v-for="option in optionGroup.options"
+                :key="option.id"
+                :value="option.value"
               >
-                {{ attribute.label }}
+                {{option.label}}
               </SfSelectOption>
             </SfSelect>
-          </template>
-          <template
-            v-if="product.__typename === 'GroupedProduct'"
-          >
-            <SfList class="grouped_items">
-              <SfListItem
-                v-for="(groupedItem, index) in groupedItems"
-                :key="index"
-                class="grouped_items--item"
-              >
-                <SfImage
-                  :src="productGetters.getProductThumbnailImage(groupedItem.product)"
-                  :alt="productGetters.getName(groupedItem.product)"
-                  :width="60"
-                />
-                <div>
-                  <p>{{ productGetters.getName(groupedItem.product) }}</p>
-                  <SfPrice
-                    :regular="$n(productGetters.getPrice(product).regular, 'currency')"
-                    :special="productGetters.getPrice(product).special && $n(productGetters.getPrice(product).special, 'currency')"
-                  />
-                </div>
-                <SfQuantitySelector
-                  v-model="groupedItem.qty"
-                  :disabled="loading || !canAddToCart"
-                />
-              </SfListItem>
-            </SfList>
-            <button
-              v-e2e="'product_add-to-cart'"
-              :disabled="loading || !canAddToCart"
-              class="color-primary sf-button grouped_items--add-to-cart"
-              @click="addGroupedToCart"
-            >
-              Add to Cart
-            </button>
-          </template>
-          <template
-            v-else-if="product.__typename === 'BundleProduct'"
-          >
-            <BundleProductSelector
-              @update-price="basePrice = $event"
-            />
-          </template>
+          </div>
           <SfAddToCart
-            v-else
-            v-model="qty"
             v-e2e="'product_add-to-cart'"
-            :disabled="loading || !canAddToCart"
+            :stock="stock"
+            v-model="qty"
+            :disabled="loading"
+            :canAddToCart="stock > 0"
             class="product__add-to-cart"
-            @click="addItem({ product, quantity: parseInt(qty) })"
+            @click="addToCart"
           />
         </div>
+
         <LazyHydrate when-idle>
-          <SfTabs
-            id="tabs"
-            :open-tab="openTab"
-            class="product__tabs"
-            @click:tab="changeTab"
-          >
+          <SfTabs :open-tab="1" class="product__tabs">
             <SfTab title="Description">
-              <div
-                v-if="productDescription"
-                v-dompurify-html="productDescription"
-                class="product__description"
-              />
-              <!-- @TODO: Check Property in Configurable Products              -->
-              <!--              <SfProperty
+              <SfProperty
                 v-for="(property, i) in properties"
                 :key="i"
                 :name="property.name"
                 :value="property.value"
                 class="product__property"
               >
-                <template
-                  v-if="property.name === 'Category'"
-                  #value
-                >
-                  <SfButton class="product__property__button sf-button&#45;&#45;text">
+                <template v-if="property.name === 'Category'" #value>
+                  <SfButton class="product__property__button sf-button--text">
                     {{ property.value }}
                   </SfButton>
                 </template>
-              </SfProperty>-->
+              </SfProperty>
             </SfTab>
             <SfTab title="Read reviews">
-              <div v-show="reviewsLoading">
-                <SfLoader />
-              </div>
               <SfReview
                 v-for="review in reviews"
-                v-show="!reviewsLoading"
                 :key="reviewGetters.getReviewId(review)"
                 :author="reviewGetters.getReviewAuthor(review)"
                 :date="reviewGetters.getReviewDate(review)"
@@ -209,318 +105,223 @@
                 hide-full-text="Read less"
                 class="product__review"
               />
-              <div
-                v-show="!reviewsLoading"
-                id="addReview"
-              >
-                <ProductAddReviewForm
-                  @add-review="successAddReview"
-                />
-              </div>
             </SfTab>
             <SfTab
               title="Additional Information"
               class="product__additional-info"
             >
-              <div class="product__additional-info">
-                <p class="product__additional-info__title">
-                  {{ $t('Instruction1') }}
-                </p>
-                <p class="product__additional-info__paragraph">
-                  {{ $t('Instruction2') }}
-                </p>
-                <p class="product__additional-info__paragraph">
-                  {{ $t('Instruction3') }}
-                </p>
-              </div>
+            <div class="product__additional-info">
+              <p class="product__additional-info__title">{{ $t('Brand') }}</p>
+              <p>{{ brand }}</p>
+              <p class="product__additional-info__title">{{ $t('Instruction1') }}</p>
+              <p class="product__additional-info__paragraph">
+                {{ $t('Instruction2') }}
+              </p>
+              <p class="product__additional-info__paragraph">
+                {{ $t('Instruction3') }}
+              </p>
+              <p>{{ careInstructions }}</p>
+            </div>
             </SfTab>
           </SfTabs>
         </LazyHydrate>
       </div>
     </div>
-    <LazyHydrate
-      v-if="relatedProducts.length > 0"
-      when-visible
-    >
-      <ProductsCarousel
+
+    <!-- <LazyHydrate when-visible>
+      <RelatedProducts
         :products="relatedProducts"
-        :title="$t('Match it with')"
+        :loading="relatedLoading"
+        title="Match it with"
       />
-    </LazyHydrate>
-    <LazyHydrate
-      v-if="upsellProducts.length > 0"
-      when-visible
-    >
-      <ProductsCarousel
-        :products="upsellProducts"
-        :title="$t('Other products you might like')"
-      />
-    </LazyHydrate>
+    </LazyHydrate> -->
+
     <LazyHydrate when-visible>
       <InstagramFeed />
     </LazyHydrate>
+
     <LazyHydrate when-visible>
       <MobileStoreBanner />
     </LazyHydrate>
+
   </div>
 </template>
 <script>
-import LazyHydrate from 'vue-lazy-hydration';
 import {
-  SfAddToCart,
-  SfBreadcrumbs,
-  SfButton,
-  SfColor,
-  SfGallery,
+  SfProperty,
   SfHeading,
+  SfPrice,
+  SfRating,
+  SfSelect,
+  SfAddToCart,
+  SfTabs,
+  SfGallery,
   SfIcon,
   SfImage,
-  SfList,
-  SfLoader,
-  SfPrice,
-  SfQuantitySelector,
-  SfRating,
+  SfBanner,
+  SfAlert,
+  SfSticky,
   SfReview,
-  SfSelect,
-  SfTabs,
+  SfBreadcrumbs,
+  SfButton,
+  SfColor
 } from '@storefront-ui/vue';
-import {
-  useProduct,
-  useCart,
-  productGetters,
-  useReview,
-  reviewGetters,
-  useUser,
-  useWishlist,
-} from '@vue-storefront/magento';
-import { onSSR } from '@vue-storefront/core';
-import { ref, computed } from '@vue/composition-api';
-import ProductsCarousel from '~/components/ProductsCarousel.vue';
-import ProductAddReviewForm from '~/components/ProductAddReviewForm.vue';
-import MobileStoreBanner from '~/components/MobileStoreBanner.vue';
+
 import InstagramFeed from '~/components/InstagramFeed.vue';
-import { useVueRouter } from '~/helpers/hooks/useVueRouter';
-import BundleProductSelector from '~/components/Products/BundleProductSelector';
-import { productData } from '~/helpers/product/productData';
-import cacheControl from '~/helpers/cacheControl';
+// import RelatedProducts from '~/components/RelatedProducts.vue';
+import { ref, computed } from '@vue/composition-api';
+import { useProduct, useCart, productGetters, useReview, reviewGetters } from '@vue-storefront/vendure';
+import { onSSR } from '@vue-storefront/core';
+import MobileStoreBanner from '~/components/MobileStoreBanner.vue';
+import LazyHydrate from 'vue-lazy-hydration';
+import { getProductVariantByConfiguration } from '~/helpers';
 
 export default {
   name: 'Product',
-  components: {
-    BundleProductSelector,
-    InstagramFeed,
-    LazyHydrate,
-    MobileStoreBanner,
-    ProductAddReviewForm,
-    ProductsCarousel,
-    SfAddToCart,
-    SfBreadcrumbs,
-    SfButton,
-    SfColor,
-    SfGallery,
-    SfHeading,
-    SfIcon,
-    SfImage,
-    SfList,
-    SfLoader,
-    SfPrice,
-    SfQuantitySelector,
-    SfRating,
-    SfReview,
-    SfSelect,
-    SfTabs,
-  },
-  middleware: cacheControl({
-    'max-age': 60,
-    'stale-when-revalidate': 5,
-  }),
   transition: 'fade',
   setup(props, context) {
     const qty = ref(1);
-    const { product, id } = productData();
-    const { route, router } = useVueRouter();
-    const { search, loading: productLoading } = useProduct(`product-${id}`);
+    const { id } = context.root.$route.params;
+    const { products, search } = useProduct('products');
+    // TODO: Implement related products
+    // const { products: relatedProducts, search: searchRelatedProducts, loading: relatedLoading } = useProduct('relatedProducts');
     const { addItem, loading } = useCart();
-    const {
-      reviews: productReviews,
-      search: searchReviews,
-      loading: reviewsLoading,
-      addReview,
-    } = useReview(`productReviews-${id}`);
-    const { isAuthenticated } = useUser();
-    const { isInWishlist, addItem: addToWishlist } = useWishlist();
-    const basePrice = ref(0);
-    const openTab = ref(1);
-    const productDataIsLoading = computed(() => productLoading.value);
-    const productShortDescription = computed(() => product.value.short_description?.html || '');
-    const productDescription = computed(() => product.value.description?.html || '');
-    const canAddToCart = computed(() => {
-      // eslint-disable-next-line no-underscore-dangle
-      if (product.value.__typename === 'ConfigurableProduct') {
-        return !!product.value.configurable_product_options_selection?.variant?.uid;
-      }
-      const inStock = product.value.stock_status || '';
-      const stockLeft = product.value.only_x_left_in_stock === null ? true : qty.value <= product.value.only_x_left_in_stock;
-      return inStock && stockLeft;
-    });
-    const categories = computed(() => productGetters.getCategoryIds(product.value));
-    const relatedProducts = computed(() => productGetters.getProductRelatedProduct(product.value));
-    const upsellProducts = computed(() => productGetters.getProductUpsellProduct(product.value));
-    const baseReviews = computed(() => (Array.isArray(productReviews.value)
-      ? [...productReviews.value].shift()
-      : productReviews.value));
-    const reviews = computed(() => reviewGetters.getItems(baseReviews.value));
-    const totalReviews = computed(() => reviewGetters.getTotalReviews(baseReviews.value));
-    const averageRating = computed(() => reviewGetters.getAverageRating(baseReviews.value));
-    const breadcrumbs = computed(() => {
-      const productCategories = product.value.categories;
-      return productGetters.getBreadcrumbs(product.value,
-        Array.isArray(productCategories) ? [...productCategories].pop() : []);
-    });
-    const productGallery = computed(() => productGetters.getGallery(product.value)
-      .map((img) => ({
-        mobile: { url: img.small },
-        desktop: { url: img.normal },
-        big: { url: img.big },
-        // eslint-disable-next-line no-underscore-dangle
-        alt: product.value._name || product.value.name,
-      })));
-    const groupedItems = computed(() => productGetters.getGroupedProducts(product.value));
+    const { reviews: productReviews, search: searchReviews } = useReview('productReviews');
 
-    const configurableOptions = computed(() => product.value.configurable_options);
-    const productConfiguration = ref({});
-    const productPrice = computed(() => {
-      // eslint-disable-next-line no-underscore-dangle
-      switch (product.value.__typename) {
-        case 'BundleProduct':
-          return basePrice.value || productGetters.getPrice(product.value).regular;
-        case 'SimpleProduct':
-        default:
-          return productGetters.getPrice(product.value).regular;
-      }
-    });
-    const productSpecialPrice = computed(() => {
-      // eslint-disable-next-line no-underscore-dangle
-      switch (product.value.__typename) {
-        case 'SimpleProduct':
-        default:
-          return productGetters.getPrice(product.value).special;
-      }
-    });
+    const product = computed(() => productGetters.getByFilters(products.value, { master: true, attributes: context.root.$route.query }));
+    const options = computed(() => productGetters.getOptions(products.value, ['color', 'size']));
+    // const categories = computed(() => productGetters.getCategoryIds(product.value));
+    // TODO: Implement reviews
+    const reviews = computed(() => reviewGetters.getItems(productReviews.value));
+    const configuration = ref({});
 
-    const addItemToWishlist = async () => {
-      await addToWishlist({ product: product.value });
-    };
-    const changeTab = (tabNumber, callback) => {
-      document
-        .querySelector('#tabs')
-        .scrollIntoView({ behavior: 'smooth', block: 'end' });
-      openTab.value = tabNumber;
-      if (callback && typeof callback === 'function') callback();
-    };
-    const changeNewReview = () => {
-      changeTab(2, () => {
-        setTimeout(() => document
-          .querySelector('#addReview')
-          .scrollIntoView({ behavior: 'smooth', block: 'end' }), 500);
-      });
-    };
-    const successAddReview = async (reviewData) => {
-      await addReview(reviewData);
-      document
-        .querySelector('#tabs')
-        .scrollIntoView({ behavior: 'smooth', block: 'end' });
-    };
-    const updateProductConfiguration = async (label, value) => {
-      productConfiguration.value[label] = value;
-      const configurations = Object.entries(productConfiguration.value).map((config) => config[1]);
-      await search({
-        queryType: 'DETAIL',
-        filter: {
-          sku: {
-            eq: id,
-          },
-        },
-        configurations,
-      });
-      router.push({
-        path: route.fullPath,
-        query: productConfiguration.value,
-      });
-    };
-    const loadProductConfiguration = () => {
-      const { query } = route;
-      productConfiguration.value = query;
-    };
-    const addGroupedToCart = async () => {
-      const groupedItemsFiltered = groupedItems.value.filter((p) => p.qty);
-      if (groupedItemsFiltered.length > 0) {
-        // eslint-disable-next-line no-restricted-syntax
-        for (const p of groupedItemsFiltered) {
-          // eslint-disable-next-line no-await-in-loop
-          await addItem({ product: p.product, quantity: p.qty });
-        }
+    const properties = computed(() => [
+      {
+        name: 'ID',
+        value: productGetters.getId(product.value)
+      },
+      {
+        name: 'Slug',
+        value: productGetters.getSlug(product.value)
+      },
+      {
+        name: 'SKU',
+        value: productGetters.getSku(product.value)
+      },
+      {
+        name: 'Categories',
+        value: productGetters.getCategoryNames(products.value).join(', ')
       }
-    };
+    ]);
+
+    // TODO: Implement breadcrumbs
+    // const breadcrumbs = computed(() => productGetters.getBreadcrumbs ? productGetters.getBreadcrumbs(product.value) : props.fallbackBreadcrumbs);
+    const productGallery = computed(() => productGetters.getGallery(product.value).map(img => ({
+      mobile: { url: img.small },
+      desktop: { url: img.normal },
+      big: { url: img.big },
+      alt: product.value._name || product.value.name
+    })));
 
     onSSR(async () => {
-      const baseSearchQuery = {
-        filter: {
-          sku: {
-            eq: id,
-          },
-        },
-      };
-      await search({
-        queryType: 'DETAIL',
-        ...baseSearchQuery,
-      });
-      await searchReviews({ ...baseSearchQuery });
-      loadProductConfiguration();
-
-      if (product?.value?.length === 0) context.root.$nuxt.error({ statusCode: 404 });
+      await search({ id });
+      // await searchRelatedProducts({ catId: [categories.value[0]], limit: 8 });
+      await searchReviews({ productId: id });
     });
 
+    const updateFilter = (filter) => {
+      const url = new URL(window.location);
+      url.searchParams.set(Object.keys(filter)[0], Object.values(filter)[0]);
+      window.history.pushState({}, '', url);
+    };
+
+    const addToCart = () => {
+      const isConfigurationSelected = Object.values(configuration.value).length;
+      if (isConfigurationSelected) {
+        const productVariant = getProductVariantByConfiguration(products.value, configuration.value);
+        const agnosticProductVariant = computed(() => productGetters.getByFilters(products.value, { id: productVariant.id }));
+
+        addItem({ product: agnosticProductVariant.value, quantity: parseInt(qty.value)});
+      } else {
+        addItem({ product: product.value, quantity: parseInt(qty.value) });
+      }
+    };
+
     return {
-      addGroupedToCart,
-      addItem,
-      addItemToWishlist,
-      averageRating,
-      basePrice,
-      breadcrumbs,
-      canAddToCart,
-      categories,
-      changeNewReview,
-      changeTab,
-      configurableOptions,
-      groupedItems,
-      isAuthenticated,
-      isInWishlist: computed(() => isInWishlist({ product: product.value })),
-      loading,
-      openTab,
+      updateFilter,
+      configuration,
       product,
-      productConfiguration,
-      productDataIsLoading,
-      productDescription,
-      productGallery,
-      productGetters,
-      productPrice,
-      productReviews,
-      productShortDescription,
-      productSpecialPrice,
-      qty,
-      relatedProducts,
-      reviewGetters,
       reviews,
-      reviewsLoading,
-      successAddReview,
-      totalReviews,
-      updateProductConfiguration,
-      upsellProducts,
+      reviewGetters,
+      averageRating: computed(() => productGetters.getAverageRating(product.value)),
+      totalReviews: computed(() => productGetters.getTotalReviews(product.value)),
+      // relatedProducts: computed(() => productGetters.getFiltered(relatedProducts.value, { master: true })),
+      // relatedLoading,
+      options,
+      qty,
+      addItem,
+      loading,
+      productGetters,
+      productGallery,
+      properties,
+      addToCart,
+      products
     };
   },
+  components: {
+    SfAlert,
+    SfColor,
+    SfProperty,
+    SfHeading,
+    SfPrice,
+    SfRating,
+    SfSelect,
+    SfAddToCart,
+    SfTabs,
+    SfGallery,
+    SfIcon,
+    SfImage,
+    SfBanner,
+    SfSticky,
+    SfReview,
+    SfBreadcrumbs,
+    SfButton,
+    InstagramFeed,
+    // RelatedProducts,
+    MobileStoreBanner,
+    LazyHydrate
+  },
+  data() {
+    return {
+      stock: 5,
+      brand:
+          'Brand name is the perfect pairing of quality and design. This label creates major everyday vibes with its collection of modern brooches, silver and gold jewellery, or clips it back with hair accessories in geo styles.',
+      careInstructions: 'Do not wash!',
+      breadcrumbs: [
+        {
+          text: 'Home',
+          route: {
+            link: '#'
+          }
+        },
+        {
+          text: 'Category',
+          route: {
+            link: '#'
+          }
+        },
+        {
+          text: 'Pants',
+          route: {
+            link: '#'
+          }
+        }
+      ]
+    };
+  }
 };
 </script>
+
 <style lang="scss" scoped>
 #product {
   box-sizing: border-box;
@@ -529,41 +330,10 @@ export default {
     margin: 0 auto;
   }
 }
-
-.grouped_items {
-  padding: 0 10px;
-
-  &--item {
-    display: grid;
-    grid-template-columns: fit-content(70px) auto fit-content(100%);
-    grid-template-rows: auto;
-    align-items: center;
-    justify-items: start;
-    column-gap: var(--spacer-base);
-    padding: var(--spacer-base) 0;
-    border-bottom: 1px solid var(--c-text-muted);
-
-    .sf-quantity-selector {
-      justify-self: end;
-    }
-  }
-
-  &--add-to-cart {
-    width: 100%;
-    margin-top: var(--spacer-lg);
-  }
-}
-
-.product-loader {
-  height: 38px;
-  margin: var(--spacer-base) auto var(--spacer-lg)
-}
-
 .product {
   @include for-desktop {
     display: flex;
   }
-
   &__info {
     margin: var(--spacer-sm) auto;
     @include for-desktop {
@@ -571,7 +341,6 @@ export default {
       margin: 0 0 0 7.5rem;
     }
   }
-
   &__header {
     --heading-title-color: var(--c-link);
     --heading-title-font-weight: var(--font-weight--bold);
@@ -584,11 +353,9 @@ export default {
       margin: 0 auto;
     }
   }
-
   &__drag-icon {
     animation: moveicon 1s ease-in-out infinite;
   }
-
   &__price-and-rating {
     margin: 0 var(--spacer-sm) var(--spacer-base);
     align-items: center;
@@ -598,83 +365,72 @@ export default {
       margin: var(--spacer-sm) 0 var(--spacer-lg) 0;
     }
   }
-
   &__rating {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     margin: var(--spacer-xs) 0 var(--spacer-xs);
   }
-
   &__count {
     @include font(
-        --count-font,
-        var(--font-weight--normal),
-        var(--font-size--sm),
-        1.4,
-        var(--font-family--secondary)
+      --count-font,
+      var(--font-weight--normal),
+      var(--font-size--sm),
+      1.4,
+      var(--font-family--secondary)
     );
     color: var(--c-text);
     text-decoration: none;
     margin: 0 0 0 var(--spacer-xs);
   }
-
   &__description {
     @include font(
-        --product-description-font,
-        var(--font-weight--light),
-        var(--font-size--base),
-        1.6,
-        var(--font-family--primary)
+      --product-description-font,
+      var(--font-weight--light),
+      var(--font-size--base),
+      1.6,
+      var(--font-family--primary)
     );
   }
-
   &__select-size {
     margin: 0 var(--spacer-sm);
     @include for-desktop {
       margin: 0;
     }
   }
-
   &__colors {
     @include font(
-        --product-color-font,
-        var(--font-weight--normal),
-        var(--font-size--lg),
-        1.6,
-        var(--font-family--secondary)
+      --product-color-font,
+      var(--font-weight--normal),
+      var(--font-size--lg),
+      1.6,
+      var(--font-family--secondary)
     );
     display: flex;
     align-items: center;
     margin-top: var(--spacer-xl);
   }
-
   &__color-label {
     margin: 0 var(--spacer-lg) 0 0;
   }
-
   &__color {
     margin: 0 var(--spacer-2xs);
   }
-
   &__add-to-cart {
     margin: var(--spacer-base) var(--spacer-sm) 0;
     @include for-desktop {
       margin-top: var(--spacer-2xl);
     }
   }
-
   &__guide,
   &__compare,
   &__save {
     display: block;
     margin: var(--spacer-xl) 0 var(--spacer-base) auto;
   }
-
   &__compare {
     margin-top: 0;
   }
-
   &__tabs {
     --tabs-title-z-index: 0;
     margin: var(--spacer-lg) auto var(--spacer-2xl);
@@ -683,55 +439,45 @@ export default {
       margin-top: var(--spacer-2xl);
     }
   }
-
   &__property {
     margin: var(--spacer-base) 0;
-
     &__button {
       --button-font-size: var(--font-size--base);
     }
   }
-
   &__review {
     padding-bottom: 24px;
     border-bottom: var(--c-light) solid 1px;
     margin-bottom: var(--spacer-base);
   }
-
   &__additional-info {
     color: var(--c-link);
     @include font(
-        --additional-info-font,
-        var(--font-weight--light),
-        var(--font-size--sm),
-        1.6,
-        var(--font-family--primary)
+      --additional-info-font,
+      var(--font-weight--light),
+      var(--font-size--sm),
+      1.6,
+      var(--font-family--primary)
     );
-
     &__title {
       font-weight: var(--font-weight--normal);
       font-size: var(--font-size--base);
       margin: 0 0 var(--spacer-sm);
-
       &:not(:first-child) {
         margin-top: 3.5rem;
       }
     }
-
     &__paragraph {
       margin: 0;
     }
   }
-
   &__gallery {
     flex: 1;
   }
 }
-
 .breadcrumbs {
   margin: var(--spacer-base) auto var(--spacer-lg);
 }
-
 @keyframes moveicon {
   0% {
     transform: translate3d(0, 0, 0);

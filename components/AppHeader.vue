@@ -6,25 +6,18 @@
     >
       <!-- TODO: add mobile view buttons after SFUI team PR -->
       <template #logo>
-        <nuxt-link
-          :to="localePath('/')"
-          class="sf-header__logo"
-        >
-          <SfImage
-            src="/icons/logo.svg"
-            alt="Vue Storefront Next"
-            class="sf-header__logo-image"
-          />
+        <nuxt-link :to="localePath('/')" class="sf-header__logo">
+          <SfImage src="/icons/logo.svg" alt="Vue Storefront Next" class="sf-header__logo-image"/>
         </nuxt-link>
       </template>
       <template #navigation>
         <SfHeaderNavigationItem
-          v-for="(category, index) in categoryTree"
-          :key="index"
-          v-e2e="'app-header-url_women'"
+          v-for="category in headerNavigation"
+          :key="category.name"
           class="nav-item"
-          :label="category.label"
-          :link="localePath(getAgnosticCatLink(category))"
+          v-e2e="`app-header-${category.name}`"
+          :label="category.name"
+          :link="localePath(`/c/${category.link}`)"
         />
       </template>
       <template #aside>
@@ -62,19 +55,13 @@
               icon="empty_cart"
               size="1.25rem"
             />
-            <SfBadge
-              v-if="cartTotalItems"
-              class="sf-badge--number cart-badge"
-            >
-              {{ cartTotalItems }}
-            </SfBadge>
+            <SfBadge v-if="cartTotalItems" class="sf-badge--number cart-badge">{{cartTotalItems}}</SfBadge>
           </SfButton>
         </div>
       </template>
       <template #search>
         <SfSearchBar
           ref="searchBarRef"
-          v-click-outside="closeSearch"
           :placeholder="$t('Search for items')"
           aria-label="Search"
           class="sf-header__search"
@@ -83,6 +70,7 @@
           @keydown.enter="handleSearch($event)"
           @focus="isSearchOpen = true"
           @keydown.esc="closeSearch"
+          v-click-outside="closeSearch"
         >
           <template #icon>
             <SfButton
@@ -91,11 +79,7 @@
               @click="closeOrFocusSearchBar"
             >
               <span class="sf-search-bar__icon">
-                <SfIcon
-                  color="var(--c-text)"
-                  size="18px"
-                  icon="cross"
-                />
+                <SfIcon color="var(--c-text)" size="18px" icon="cross" />
               </span>
             </SfButton>
             <SfButton
@@ -104,70 +88,34 @@
               @click="isSearchOpen ? isSearchOpen = false : isSearchOpen = true"
             >
               <span class="sf-search-bar__icon">
-                <SfIcon
-                  color="var(--c-text)"
-                  size="20px"
-                  icon="search"
-                />
+                <SfIcon color="var(--c-text)" size="20px" icon="search" />
               </span>
             </SfButton>
           </template>
         </SfSearchBar>
       </template>
     </SfHeader>
-    <SearchResults
-      :visible="isSearchOpen"
-      :result="result"
-      @close="closeSearch"
-      @removeSearchResults="removeSearchResults"
-    />
+    <SearchResults :visible="isSearchOpen" :result="result" @close="closeSearch" @removeSearchResults="removeSearchResults" />
     <SfOverlay :visible="isSearchOpen" />
   </div>
 </template>
 
-<script lang="ts">
-import {
-  SfHeader,
-  SfImage,
-  SfIcon,
-  SfButton,
-  SfBadge,
-  SfSearchBar,
-  SfOverlay,
-} from '@storefront-ui/vue';
-import {
-  cartGetters,
-  categoryGetters,
-  useCart,
-  useCategory,
-  useCategorySearch,
-  useFacet,
-  useUser,
-  useWishlist,
-} from '@vue-storefront/magento';
-import {
-  computed,
-  ref,
-  onBeforeUnmount,
-  watch,
-  defineComponent,
-} from '@vue/composition-api';
+<script>
+import { SfHeader, SfImage, SfIcon, SfButton, SfBadge, SfSearchBar, SfOverlay, SfMenuItem, SfLink } from '@storefront-ui/vue';
+import { useUiState, useUiHelpers } from '~/composables';
+import { useCart, useWishlist, useUser, cartGetters, useCategory, categoryGetters } from '@vue-storefront/vendure';
+import { computed, ref, onBeforeUnmount, watch } from '@vue/composition-api';
 import { onSSR } from '@vue-storefront/core';
+import LocaleSelector from '~/components/LocaleSelector';
+import SearchResults from '~/components/SearchResults';
 import { clickOutside } from '@storefront-ui/vue/src/utilities/directives/click-outside/click-outside-directive.js';
 import {
   mapMobileObserver,
-  unMapMobileObserver,
+  unMapMobileObserver
 } from '@storefront-ui/vue/src/utilities/mobile-observer.js';
 import debounce from 'lodash.debounce';
-import {
-  useUiHelpers,
-  useUiState,
-} from '~/composables';
-import { useVueRouter } from '~/helpers/hooks/useVueRouter';
-import LocaleSelector from '~/components/LocaleSelector.vue';
-import SearchResults from '~/components/SearchResults.vue';
 
-export default defineComponent({
+export default {
   components: {
     SfHeader,
     SfImage,
@@ -178,30 +126,18 @@ export default defineComponent({
     SfSearchBar,
     SearchResults,
     SfOverlay,
+    SfMenuItem,
+    SfLink
   },
   directives: { clickOutside },
-  setup() {
-    const { router } = useVueRouter();
+  setup(props, { root }) {
     const { toggleCartSidebar, toggleWishlistSidebar, toggleLoginModal } = useUiState();
-    const { setTermForUrl, getFacetsFromURL, getAgnosticCatLink } = useUiHelpers();
+    const { setTermForUrl, getFacetsFromURL } = useUiHelpers();
     const { isAuthenticated, load: loadUser } = useUser();
     const { cart, load: loadCart } = useCart();
     const { load: loadWishlist } = useWishlist();
-    const {
-      result: searchResult,
-      search: productsSearch,
-      // loading: productsLoading,
-    } = useFacet('AppHeader:Products');
-    const {
-      result: categories,
-      search: categoriesSearch,
-    } = useCategorySearch('AppHeader:Categories');
-    const {
-      categories: categoryList,
-      search: categoriesListSearch,
-    } = useCategory('AppHeader:CategoryList');
-
-    const term = ref(getFacetsFromURL().term);
+    const { search, categories } = useCategory();
+    const term = ref(getFacetsFromURL().phrase);
     const isSearchOpen = ref(false);
     const searchBarRef = ref(null);
     const result = ref(null);
@@ -211,28 +147,25 @@ export default defineComponent({
       return count ? count.toString() : null;
     });
 
-    const accountIcon = computed(() => (isAuthenticated.value ? 'profile_fill' : 'profile'));
+    const accountIcon = computed(() => isAuthenticated.value ? 'profile_fill' : 'profile');
 
-    const categoryTree = computed(() => categoryGetters.getCategoryTree(categoryList.value?.[0])?.items.filter((c) => c.count > 0));
-
+    // TODO: https://github.com/vuestorefront/vue-storefront/issues/4927
     const handleAccountClick = async () => {
       if (isAuthenticated.value) {
-        await router.push('/my-account');
-      } else {
-        toggleLoginModal();
+        return root.$router.push('/my-account');
       }
+
+      toggleLoginModal();
     };
 
     onSSR(async () => {
-      await Promise.all([
-        loadUser(),
-        loadCart(),
-        loadWishlist(),
-        categoriesListSearch({
-          pageSize: 100,
-        }),
-      ]);
+      await loadUser();
+      await loadCart();
+      await loadWishlist();
+      await search();
     });
+
+    const headerNavigation = computed(() => categoryGetters.getNavigation(categories.value));
 
     const closeSearch = () => {
       if (!isSearchOpen.value) return;
@@ -242,23 +175,13 @@ export default defineComponent({
     };
 
     const handleSearch = debounce(async (paramValue) => {
-      term.value = !paramValue.target ? paramValue : paramValue.target.value;
+      if (!paramValue.target) {
+        term.value = paramValue;
+      } else {
+        term.value = paramValue.target.value;
+      }
+      result.value = { };
 
-      await Promise.all([
-        productsSearch({
-          itemsPerPage: 12,
-          term: term.value as string,
-        }),
-        categoriesSearch({
-          term: term.value as string,
-        }),
-      ]);
-
-      result.value = {
-        products: searchResult.value?.data?.items,
-        categories: categories.value
-          .map((element) => categoryGetters.getCategoryTree(element)),
-      };
     }, 1000);
 
     const isMobile = computed(() => mapMobileObserver().isMobile.get());
@@ -266,18 +189,17 @@ export default defineComponent({
     const closeOrFocusSearchBar = () => {
       if (isMobile.value) {
         return closeSearch();
+      } else {
+        term.value = '';
+        return searchBarRef.value.$el.children[0].focus();
       }
-      term.value = '';
-      return searchBarRef.value.$el.children[0].focus();
     };
 
     watch(() => term.value, (newVal, oldVal) => {
-      const shouldSearchBeOpened = (!isMobile.value && term.value.length > 0)
-        && ((!oldVal && newVal)
-          || (newVal.length !== oldVal.length
-            && isSearchOpen.value === false));
-
-      if (shouldSearchBeOpened) isSearchOpen.value = true;
+      const shouldSearchBeOpened = (!isMobile.value && term.value.length > 0) && ((!oldVal && newVal) || (newVal.length !== oldVal.length && isSearchOpen.value === false));
+      if (shouldSearchBeOpened) {
+        isSearchOpen.value = true;
+      }
     });
 
     const removeSearchResults = () => {
@@ -291,45 +213,40 @@ export default defineComponent({
     return {
       accountIcon,
       cartTotalItems,
-      categoryTree,
-      closeOrFocusSearchBar,
-      closeSearch,
-      getAgnosticCatLink,
       handleAccountClick,
-      handleSearch,
-      isMobile,
-      isSearchOpen,
-      removeSearchResults,
-      result,
-      searchBarRef,
-      setTermForUrl,
-      term,
       toggleCartSidebar,
       toggleWishlistSidebar,
+      setTermForUrl,
+      term,
+      isSearchOpen,
+      closeSearch,
+      handleSearch,
+      result,
+      closeOrFocusSearchBar,
+      searchBarRef,
+      isMobile,
+      removeSearchResults,
+      headerNavigation
     };
-  },
-});
+  }
+};
 </script>
 
 <style lang="scss" scoped>
 .sf-header {
-  --header-padding: var(--spacer-sm);
+  --header-padding:  var(--spacer-sm);
   @include for-desktop {
     --header-padding: 0;
   }
-
   &__logo-image {
-    height: 100%;
+      height: 100%;
   }
 }
-
 .header-on-top {
   z-index: 2;
 }
-
 .nav-item {
   --header-navigation-item-margin: 0 var(--spacer-base);
-
   .sf-header-navigation-item__item--mobile {
     display: none;
   }

@@ -16,16 +16,20 @@
           <MyProfile />
         </SfContentPage>
 
-        <SfContentPage title="Addresses details">
-          <AddressesDetails />
+        <SfContentPage title="Shipping details">
+          <ShippingDetails />
+        </SfContentPage>
+
+        <SfContentPage title="Billing details">
+          <BillingDetails />
+        </SfContentPage>
+
+        <SfContentPage title="Loyalty card">
+          <LoyaltyCard />
         </SfContentPage>
 
         <SfContentPage title="My newsletter">
           <MyNewsletter />
-        </SfContentPage>
-
-        <SfContentPage title="My wishlist">
-          <MyWishlist />
         </SfContentPage>
       </SfContentCategory>
 
@@ -43,41 +47,42 @@
     </SfContentPages>
   </div>
 </template>
-<script lang="ts">
+<script>
 import { SfBreadcrumbs, SfContentPages } from '@storefront-ui/vue';
-import { computed, defineComponent } from '@vue/composition-api';
-import { useUser } from '@vue-storefront/magento';
-import MyProfile from './MyAccount/MyProfile.vue';
-import AddressesDetails from './MyAccount/AddressesDetails.vue';
-import MyNewsletter from './MyAccount/MyNewsletter.vue';
-import MyWishlist from './MyAccount/MyWishlist.vue';
-import OrderHistory from './MyAccount/OrderHistory.vue';
-import MyReviews from './MyAccount/MyReviews.vue';
-import { useVueRouter } from '~/helpers/hooks/useVueRouter';
+import { computed } from '@vue/composition-api';
+import { useUser } from '@vue-storefront/vendure';
+import MyProfile from './MyAccount/MyProfile';
+import ShippingDetails from './MyAccount/ShippingDetails';
+import BillingDetails from './MyAccount/BillingDetails';
+import LoyaltyCard from './MyAccount/LoyaltyCard';
+import MyNewsletter from './MyAccount/MyNewsletter';
+import OrderHistory from './MyAccount/OrderHistory';
+import MyReviews from './MyAccount/MyReviews';
 
-export default defineComponent({
+export default {
   name: 'MyAccount',
   components: {
-    AddressesDetails,
-    MyNewsletter,
-    MyProfile,
-    MyReviews,
-    MyWishlist,
-    OrderHistory,
     SfBreadcrumbs,
     SfContentPages,
+    MyProfile,
+    ShippingDetails,
+    BillingDetails,
+    LoyaltyCard,
+    MyNewsletter,
+    OrderHistory,
+    MyReviews
   },
   middleware: [
-    'is-authenticated',
+    'is-authenticated'
   ],
-  setup() {
-    const { router, route } = useVueRouter();
+  setup(props, context) {
+    const { $router, $route } = context.root;
     const { logout } = useUser();
     const activePage = computed(() => {
-      const { pageName } = route.params;
+      const { pageName } = $route.params;
 
       if (pageName) {
-        return (`${pageName.charAt(0).toUpperCase()}${pageName.slice(1)}`).replace('-', ' ');
+        return (pageName.charAt(0).toUpperCase() + pageName.slice(1)).replace('-', ' ');
       }
 
       return 'My profile';
@@ -86,11 +91,11 @@ export default defineComponent({
     const changeActivePage = async (title) => {
       if (title === 'Log out') {
         await logout();
-        await router.push('/');
+        $router.push('/');
         return;
       }
 
-      await router.push(`/my-account/${(title || '').toLowerCase().replace(' ', '-')}`);
+      $router.push(`/my-account/${(title || '').toLowerCase().replace(' ', '-')}`);
     };
 
     return { changeActivePage, activePage };
@@ -101,16 +106,16 @@ export default defineComponent({
       breadcrumbs: [
         {
           text: 'Home',
-          route: { link: '#' },
+          route: { link: '#' }
         },
         {
           text: 'My Account',
-          route: { link: '#' },
-        },
-      ],
+          route: { link: '#' }
+        }
+      ]
     };
-  },
-});
+  }
+};
 </script>
 
 <style lang='scss' scoped>
@@ -135,14 +140,5 @@ export default defineComponent({
 }
 .breadcrumbs {
   margin: var(--spacer-base) 0 var(--spacer-lg);
-}
-.sf-content-pages {
-  height: auto;
-}
-::v-deep .sf-content-pages__content {
-  height: auto;
-}
-.sf-content-pages__content {
-  height: auto;
 }
 </style>

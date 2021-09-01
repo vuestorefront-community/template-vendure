@@ -77,7 +77,7 @@ import {
 } from '@storefront-ui/vue';
 import UserBillingAddress from '~/components/UserBillingAddress';
 import BillingAddressForm from '~/components/MyAccount/BillingAddressForm';
-import { useUserBilling, userBillingGetters } from '@vue-storefront/magento';
+import { useUserBilling, userBillingGetters } from '@vue-storefront/vendure';
 import { ref, computed } from '@vue/composition-api';
 import { onSSR } from '@vue-storefront/core';
 

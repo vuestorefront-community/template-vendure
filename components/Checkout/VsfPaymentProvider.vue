@@ -1,91 +1,135 @@
 <template>
-  <div>
-    <SfRadio
-      v-for="method in paymentMethods"
-      :key="method.value"
-      v-e2e="'payment-method'"
-      :label="method.label"
-      :value="method.value"
-      :selected="selectedMethod"
-      name="paymentMethod"
-      class="form__radio payment"
-      @input="definePaymentMethods(method.value)"
-    >
-      <div class="payment__label">
-        {{ method.label }}
-      </div>
-    </SfRadio>
+  <div class="payment-provider">
+    <SfHeading
+      :level="3"
+      :title="$t('Payment methods')"
+      class="sf-heading--left sf-heading--no-underline title"
+    />
+    <div class="form">
+      <div class="form__radio-group payment__methods">
+          <SfRadio
+            v-e2e="'payment-method'"
+            v-for="method in paymentMethods"
+            :key="method.id"
+            :label="method.name"
+            :value="method.id"
+            :selected="selectedPaymentMethod.id"
+            @input="selectPaymentMethod(method)"
+            name="paymentMethod"
+            :description="method.description"
+            class="form__radio payment__method"
+          >
+            <template #label="{ label }">
+              <div class="sf-radio__label payment__label">
+                <div>{{ label }}</div>
+              </div>
+            </template>
+            <template #description="{ description }">
+              <div class="sf-radio__description payment__description">
+                <div class="payment__info">
+                  {{ description }}
+                </div>
+              </div>
+            </template>
+          </SfRadio>
+        </div>
+    </div>
   </div>
 </template>
 
-<script lang="ts">
-import { SfRadio } from '@storefront-ui/vue';
+<script>
 import {
-  ref,
-  onMounted,
-  computed,
-  defineComponent,
-} from '@vue/composition-api';
-import { usePaymentProvider } from '@vue-storefront/magento';
+  SfHeading,
+  SfButton,
+  SfRadio
+} from '@storefront-ui/vue';
+import { ref, onMounted } from '@vue/composition-api';
+import { usePaymentProviderMock } from '@/composables/usePaymentProviderMock';
+import { useVSFContext } from '@vue-storefront/core';
 
-export default defineComponent({
+export default {
   name: 'VsfPaymentProvider',
-
   components: {
-    SfRadio,
+    SfHeading,
+    SfButton,
+    SfRadio
   },
+  setup (_, { emit }) {
+    const { status } = usePaymentProviderMock();
+    const selectedPaymentMethod = ref({});
+    const { $vendure } = useVSFContext();
+    const paymentMethods = ref([]);
 
-  emits: ['status'],
-
-  setup(props, { emit }) {
-    const { load, state, save } = usePaymentProvider();
-    const selectedMethod = ref(null);
+    const selectPaymentMethod = async (paymentMethod) => {
+      selectedPaymentMethod.value = paymentMethod;
+      emit('paymentMethodSelected', paymentMethod);
+      status.value = true;
+    };
 
     onMounted(async () => {
-      await load();
+      const response = await $vendure.api.getPaymentMethods();
+
+      paymentMethods.value = response?.data?.eligiblePaymentMethods;
     });
 
-    const paymentMethods = computed(() => (Array.isArray(state.value) ? state.value.map((p) => ({
-      label: p.title,
-      value: p.code,
-    })) : []));
-
-    const definePaymentMethods = async (paymentMethod) => {
-      try {
-        await save({
-          paymentMethod: {
-            code: paymentMethod,
-          },
-        });
-
-        selectedMethod.value = paymentMethod;
-
-        emit('status', paymentMethod);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
     return {
-      state,
       paymentMethods,
-      selectedMethod,
-      definePaymentMethods,
+      selectedPaymentMethod,
+      selectPaymentMethod
     };
-  },
-});
+  }
+};
 </script>
 
 <style lang="scss" scoped>
-.payment {
-  &__label {
+.title {
+  margin: var(--spacer-xl) 0 var(--spacer-base) 0;
+  --heading-title-font-weight: var(--font-weight--bold);
+}
+.form {
+  --button-width: 100%;
+  @include for-desktop {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    align-items: center;
+    --button-width: auto;
   }
+  &__action {
+    @include for-desktop {
+      flex: 0 0 100%;
+      display: flex;
+    }
+  }
+  &__radio-group {
+    flex: 0 0 100%;
+    margin: 0 0 var(--spacer-xl) 0;
+    @include for-desktop {
+      margin: 0 0 var(--spacer-xl) 0;
+    }
 
-  &__description {
+  }
+}
+.payment {
+  &__methods {
+    border: 1px solid var(--c-light);
+    border-width: 1px 0;
+    @include for-desktop {
+      display: flex;
+      padding: var(--spacer-lg) 0;
+    }
+  }
+  &__method {
     --radio-description-margin: 0;
-    --radio-description-font-size: var(--font-xs);
+    --radio-container-align-items: center;
+    --ratio-content-margin: 0 0 0 var(--spacer-base);
+    --radio-label-font-size: var(--font-base);
+    --radio-background: transparent;
+    white-space: nowrap;
+    --radio-background: transparent;
+    @include for-desktop {
+      border: 0;
+      --radio-border-radius: 4px;
+    }
   }
 }
 </style>

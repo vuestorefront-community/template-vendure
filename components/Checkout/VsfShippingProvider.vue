@@ -3,144 +3,146 @@
     <SfHeading
       :level="3"
       :title="$t('Shipping method')"
-      class="sf-heading&#45;&#45;left sf-heading&#45;&#45;no-underline title"
+      class="sf-heading--left sf-heading--no-underline title"
     />
     <div class="form">
-      <SfLoader :loading="isLoading">
-        <div v-if="errorUseGetShippingMethods.load">
-          {{
-            $t(
-              'There was some error while trying to fetch shipping methods. We are sorry, please try with different shipping details or later.')
-          }}
+      <SfLoader :loading="loadingShippingProvider">
+        <div v-if="errorShippingProvider.save">
+          {{ $t('There was some error while trying to select this shipping method. We are sorry, please try with different shipping method or later.') }}
         </div>
-        <div v-else-if="errorShippingProvider.save">
-          {{
-            $t(
-              'There was some error while trying to select this shipping method. We are sorry, please try with different shipping method or later.')
-          }}
-        </div>
-        <div v-else-if="shippingMethods.length === 0">
-          {{
-            $t(
-              'There are no shipping methods available for this country. We are sorry, please try with different country or later.')
-          }}
+        <div v-else-if="!hasShippingMethods">
+          {{ $t('There are no shipping methods available for this country. We are sorry, please try with different country or later.') }}
         </div>
       </SfLoader>
       <div class="form__radio-group">
-        <SfRadio
-          v-for="(method, index) in shippingMethods"
-          :key="index"
-          v-e2e="'shipping-method-label'"
-          :label="method.method_title"
-          :value="method.method_code"
-          :selected="selectedShippingMethod && selectedShippingMethod.method_code"
-          name="shippingMethod"
-          :description="method.carrier_title"
-          class="form__radio shipping"
-          @input="selectShippingMethod(method)"
-        >
-          <template #label>
-            <div class="sf-radio__label shipping__label">
-              <div>{{ method.carrier_title }}</div>
-              <div v-if="method && (method.amount || method.price_incl_tax)">
-                {{ $n(getShippingMethodPrice(method), 'currency') }}
+          <SfRadio
+            v-e2e="'shipping-method-label'"
+            v-for="method in state"
+            :key="method.id"
+            :label="method.name"
+            :value="method.id"
+            :selected="selectedShippingMethod && selectedShippingMethod.id"
+            @input="selectShippingMethod(method)"
+            name="shippingMethod"
+            :description="method.localizedDescription"
+            class="form__radio shipping"
+          >
+            <template #label="{ label }">
+              <div class="sf-radio__label shipping__label">
+                <div>{{ label }}</div>
+                <div v-if="method && method.priceWithTax">{{ $n(getCalculatedPrice(method.priceWithTax), 'currency') }}</div>
               </div>
-            </div>
-          </template>
-          <template #description>
-            <div class="sf-radio__description shipping__description">
-              <div class="shipping__info">
-                {{ method.method_title }}
+            </template>
+            <template #description="{ localizedDescription }">
+              <div class="sf-radio__description shipping__description">
+                <div class="shipping__info">
+                  {{ localizedDescription }}
+                </div>
               </div>
-            </div>
-          </template>
-        </SfRadio>
-      </div>
-      <div class="form__action">
-        <SfButton
-          v-e2e="'continue-to-billing'"
-          class="form__action-button"
-          type="button"
-          :disabled="!isShippingMethodStepCompleted || isLoading || loadingShippingProvider.save"
-          @click="$emit('submit')"
-        >
-          {{ $t('Continue to billing') }}
-        </SfButton>
-      </div>
+            </template>
+          </SfRadio>
+        </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import {
-  useCart,
-  useShippingProvider,
-  cartGetters,
-  useGetShippingMethods,
-} from '@vue-storefront/magento';
+<script>
+import { useCart, useShippingProvider, cartGetters } from '@vue-storefront/vendure';
 import {
   SfHeading,
   SfButton,
   SfRadio,
-  SfLoader,
+  SfLoader
 } from '@storefront-ui/vue';
+import { ref, reactive, onMounted, computed } from '@vue/composition-api';
+import { getCalculatedPrice } from '~/helpers';
+import { useVSFContext } from '@vue-storefront/core';
 
-import { computed, defineComponent } from '@vue/composition-api';
-import getShippingMethodPrice from '~/helpers/checkout/getShippingMethodPrice';
-
-export default defineComponent({
+export default {
   name: 'VsfShippingProvider',
   components: {
     SfHeading,
     SfButton,
     SfRadio,
-    SfLoader,
+    SfLoader
   },
-  setup() {
-    const {
-      result: shippingMethods,
-      loading: loadingShippingMethods,
-      error: errorUseGetShippingMethods,
-    } = useGetShippingMethods('VsfShippingProvider');
-    const { cart } = useCart();
+  props: {
+    beforeLoad: {
+      type: Function,
+      default: config => config
+    },
+    afterLoad: {
+      type: Function,
+      default: shippingMethodsResponse => shippingMethodsResponse
+    },
+    beforeSelect: {
+      type: Function,
+      default: shippingMethod => shippingMethod
+    },
+    afterSelect: {
+      type: Function,
+      // eslint-disable-next-line
+      default: selectedShippingMethod => {}
+    },
+    beforeSelectedDetailsChange: {
+      type: Function,
+      default: () => {}
+    },
+    afterSelectedDetailsChange: {
+      type: Function,
+      default: () => {}
+    },
+    onError: {
+      type: Function,
+      // eslint-disable-next-line
+      default: ({ action, error }) => {}
+    }
+  },
+  setup (props, { emit }) {
+    const shippingMethods = ref([]);
+    const { $vendure } = useVSFContext();
+    const { cart, setCart } = useCart();
     const {
       state,
+      load,
       error: errorShippingProvider,
-      loading: loadingShippingProvider,
-      save,
+      loading: loadingShippingProvider
     } = useShippingProvider();
-    const selectedShippingMethod = computed(() => state.value);
     const totals = computed(() => cartGetters.getTotals(cart.value));
-    const isLoading = computed(() => loadingShippingMethods.value || loadingShippingProvider.value);
-    const isShippingMethodStepCompleted = computed(() => state.value?.method_code && !isLoading.value);
-    /**
-     * @TODO: Do not run the setShippingMethodsOnCart mutation on in-store pickup orders.
-     * Instead, specify the pickup_location_code attribute in the setShippingAddressesOnCart mutation.
-     */
-    const selectShippingMethod = async (method) => {
-      await save({
-        shippingMethod: {
-          carrier_code: method.carrier_code,
-          method_code: method.method_code,
-        },
-      });
+    const selectedShippingMethod = ref(null);
+
+    const error = reactive({
+      loadMethods: null
+    });
+
+    const selectShippingMethod = async shippingMethod => {
+      const newOrder = await $vendure.api.setShippingMethod({ shippingMethodId: shippingMethod.id });
+      setCart(newOrder.data.setOrderShippingMethod);
+      selectedShippingMethod.value = shippingMethod;
+      emit('shippingMethodSelected', shippingMethod);
     };
 
+    const hasShippingMethods = computed(() => state?.value?.length);
+
+    onMounted(async () => {
+      await props.beforeLoad();
+      await load();
+    });
+
     return {
-      errorShippingProvider,
-      errorUseGetShippingMethods,
-      getShippingMethodPrice,
-      isLoading,
-      isShippingMethodStepCompleted,
-      loadingShippingProvider,
+      shippingMethods,
+      hasShippingMethods,
+      getCalculatedPrice,
       selectedShippingMethod,
       selectShippingMethod,
-      shippingMethods,
-      state,
       totals,
+      error,
+      errorShippingProvider,
+      loadingShippingProvider,
+      state
     };
-  },
-});
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -155,7 +157,6 @@ export default defineComponent({
       display: flex;
       justify-content: space-between;
     }
-
     &__description {
       --radio-description-margin: 0;
       --radio-description-font-size: var(--font-xs);
@@ -169,21 +170,18 @@ export default defineComponent({
     flex-wrap: wrap;
     align-items: center;
   }
-
   &__action {
     @include for-desktop {
       flex: 0 0 100%;
       display: flex;
     }
   }
-
   &__action-button {
     --button-width: 100%;
     @include for-desktop {
       --button-width: 25rem;
     }
   }
-
   &__radio-group {
     flex: 0 0 100%;
     margin: 0 0 var(--spacer-xl) 0;

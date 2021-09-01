@@ -2,13 +2,12 @@ import { computed, reactive } from '@vue/composition-api';
 
 interface UiNotification {
   message: string;
-  title?: string;
-  action?: { text: string; onClick: (...args: any) => void };
+  action: { text: string; onClick: (...args: any) => void };
   type: 'danger' | 'success' | 'info';
   icon: string;
-  persist?: boolean;
+  persist: boolean;
   id: symbol;
-  dismiss?: () => void;
+  dismiss: () => void;
 }
 
 interface Notifications {
@@ -16,17 +15,17 @@ interface Notifications {
 }
 
 const state = reactive<Notifications>({
-  notifications: [],
+  notifications: []
 });
 const maxVisibleNotifications = 3;
 const timeToLive = 3000;
 
 const useUiNotification = () => {
   const send = (notification: UiNotification) => {
-    const id = Symbol('id');
+    const id = Symbol();
 
     const dismiss = () => {
-      const index = state.notifications.findIndex((n) => n.id === id);
+      const index = state.notifications.findIndex(notification => notification.id === id);
 
       if (index !== -1) state.notifications.splice(index, 1);
     };
@@ -34,7 +33,7 @@ const useUiNotification = () => {
     const newNotification = {
       ...notification,
       id,
-      dismiss,
+      dismiss
     };
 
     state.notifications.push(newNotification);
@@ -47,7 +46,7 @@ const useUiNotification = () => {
 
   return {
     send,
-    notifications: computed(() => state.notifications),
+    notifications: computed(() => state.notifications)
   };
 };
 

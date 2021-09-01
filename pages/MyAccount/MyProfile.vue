@@ -6,10 +6,7 @@
         {{ $t('Feel free to edit') }}
       </p>
 
-      <ProfileUpdateForm
-        :loading="loading"
-        @submit="updatePersonalData"
-      />
+      <ProfileUpdateForm @submit="updatePersonalData" />
 
       <p class="notice">
         {{ $t('Use your personal data') }}
@@ -20,7 +17,9 @@
     <!-- Password reset -->
     <SfTab title="Password change">
       <p class="message">
-        {{ $t('Change password your account') }}:<br>
+        {{ $t('Change password your account') }}:<br />
+        {{ $t('Your current email address is') }}
+        <span class="message__label">example@email.com</span>
       </p>
 
       <PasswordResetForm @submit="updatePassword" />
@@ -28,59 +27,52 @@
   </SfTabs>
 </template>
 
-<script lang="ts">
+<script>
 import { extend } from 'vee-validate';
-import {
-  required,
-  min,
-  confirmed,
-} from 'vee-validate/dist/rules';
-import { SfTabs } from '@storefront-ui/vue';
-import { onSSR } from '@vue-storefront/core';
-import { useUser } from '@vue-storefront/magento';
-import { defineComponent } from '@vue/composition-api';
-import ProfileUpdateForm from '~/components/MyAccount/ProfileUpdateForm.vue';
-import PasswordResetForm from '~/components/MyAccount/PasswordResetForm.vue';
+import { email, required, min, confirmed } from 'vee-validate/dist/rules';
+import ProfileUpdateForm from '~/components/MyAccount/ProfileUpdateForm';
+import PasswordResetForm from '~/components/MyAccount/PasswordResetForm';
+import { SfTabs, SfInput, SfButton } from '@storefront-ui/vue';
+import { useUser } from '@vue-storefront/vendure';
+
+extend('email', {
+  ...email,
+  message: 'Invalid email'
+});
 
 extend('required', {
   ...required,
-  message: 'This field is required',
+  message: 'This field is required'
 });
 
 extend('min', {
   ...min,
-  message: 'The field should have at least {length} characters',
+  message: 'The field should have at least {length} characters'
 });
 
 extend('password', {
-  message: 'The password must contain at least: 1 uppercase letter, 1 lowercase letter, 1 number, and one special character (E.g. , . _ & ? etc)',
-  validate: (value) => {
-    const strongRegex = new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*])(?=.{8,})');
-    return strongRegex.test(value);
-  },
+  validate: value => String(value).length >= 8 && String(value).match(/[A-Za-z]/gi) && String(value).match(/[0-9]/gi),
+  message: 'Password must have at least 8 characters including one letter and a number'
 });
 
 extend('confirmed', {
   ...confirmed,
-  message: 'Passwords don\'t match',
+  message: 'Passwords don\'t match'
 });
 
-export default defineComponent({
+export default {
   name: 'PersonalDetails',
 
   components: {
     SfTabs,
+    SfInput,
+    SfButton,
     ProfileUpdateForm,
-    PasswordResetForm,
+    PasswordResetForm
   },
 
   setup() {
-    const {
-      updateUser,
-      changePassword,
-      load,
-      loading,
-    } = useUser();
+    const { updateUser, changePassword } = useUser();
 
     const formHandler = async (fn, onComplete, onError) => {
       try {
@@ -91,33 +83,15 @@ export default defineComponent({
       }
     };
 
-    const updatePersonalData = ({
-      form,
-      onComplete,
-      onError,
-    }) => formHandler(() => updateUser({ user: form.value }),
-      onComplete,
-      onError);
-    const updatePassword = ({
-      form,
-      onComplete,
-      onError,
-    }) => formHandler(() => changePassword({
-      current: form.value.currentPassword,
-      new: form.value.newPassword,
-    }), onComplete, onError);
-
-    onSSR(async () => {
-      await load();
-    });
+    const updatePersonalData = ({ form, onComplete, onError }) => formHandler(() => updateUser({ user: form.value }), onComplete, onError);
+    const updatePassword = ({ form, onComplete, onError }) => formHandler(() => changePassword({ current: form.value.currentPassword, new: form.value.newPassword }), onComplete, onError);
 
     return {
-      loading,
       updatePersonalData,
-      updatePassword,
+      updatePassword
     };
-  },
-});
+  }
+};
 </script>
 
 <style lang='scss' scoped>
@@ -126,16 +100,13 @@ export default defineComponent({
   font-family: var(--font-family--primary);
   line-height: 1.6;
 }
-
 .message {
   margin: 0 0 var(--spacer-xl) 0;
   font-size: var(--font-size--base);
-
   &__label {
     font-weight: 400;
   }
 }
-
 .notice {
   margin: var(--spacer-lg) 0 0 0;
   font-size: var(--font-size--sm);

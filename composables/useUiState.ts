@@ -9,8 +9,7 @@ const state = reactive({
   isWishlistSidebarOpen: false,
   isLoginModalOpen: false,
   isCategoryGridView: true,
-  isWishlistGridView: true,
-  isFilterSidebarOpen: false,
+  isFilterSidebarOpen: false
 });
 
 const useUiState = () => {
@@ -30,23 +29,11 @@ const useUiState = () => {
   };
 
   const isCategoryGridView = computed(() => state.isCategoryGridView);
-
-  const isWishlistGridView = computed(() => state.isWishlistGridView);
-
   const changeToCategoryGridView = () => {
     state.isCategoryGridView = true;
   };
-
   const changeToCategoryListView = () => {
     state.isCategoryGridView = false;
-  };
-
-  const changeToWishlistGridView = () => {
-    state.isWishlistGridView = true;
-  };
-
-  const changeToWishlistListView = () => {
-    state.isWishlistGridView = false;
   };
 
   const isFilterSidebarOpen = computed(() => state.isFilterSidebarOpen);
@@ -59,16 +46,13 @@ const useUiState = () => {
     isWishlistSidebarOpen,
     isLoginModalOpen,
     isCategoryGridView,
-    isWishlistGridView,
     isFilterSidebarOpen,
     toggleCartSidebar,
     toggleWishlistSidebar,
     toggleLoginModal,
     changeToCategoryGridView,
     changeToCategoryListView,
-    changeToWishlistGridView,
-    changeToWishlistListView,
-    toggleFilterSidebar,
+    toggleFilterSidebar
   };
 };
 

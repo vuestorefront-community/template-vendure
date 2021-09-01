@@ -1,17 +1,19 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { Category } from '@vue-storefront/magento-api';
-import { AgnosticCategoryTree, AgnosticFacet } from '@vue-storefront/core';
-import { getInstance } from '~/helpers/hooks/getInstance';
-import { useVueRouter } from '~/helpers/hooks/useVueRouter';
+import { getCurrentInstance } from '@vue/composition-api';
+import { AgnosticFacet } from '@vue-storefront/core';
 
-const nonFilters = new Set(['page', 'sort', 'term', 'itemsPerPage']);
+const nonFilters = ['page', 'sort', 'phrase', 'itemsPerPage'];
+
+const getInstance = () => {
+  const vm = getCurrentInstance();
+  return vm.$root as any;
+};
 
 const reduceFilters = (query) => (prev, curr) => {
-  const makeArray = Array.isArray(query[curr]) || nonFilters.has(curr);
+  const makeArray = Array.isArray(query[curr]) || nonFilters.includes(curr);
 
   return {
     ...prev,
-    [curr]: makeArray ? query[curr] : [query[curr]],
+    [curr]: makeArray ? query[curr] : [query[curr]]
   };
 };
 
@@ -19,47 +21,69 @@ const getFiltersDataFromUrl = (context, onlyFilters) => {
   const { query } = context.$router.history.current;
 
   return Object.keys(query)
-    .filter((f) => (onlyFilters ? !nonFilters.has(f) : nonFilters.has(f)))
+    .filter(f => onlyFilters ? !nonFilters.includes(f) : nonFilters.includes(f))
     .reduce(reduceFilters(query), {});
 };
 
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 const useUiHelpers = () => {
-  const { route } = useVueRouter();
   const instance = getInstance();
 
   const getFacetsFromURL = () => {
-    const { query } = route;
+    const { query, params } = instance.$router.history.current;
+    const categorySlug = Object.keys(params).reduce((prev, curr) => params[curr] || prev, params.slug_1);
 
     return {
-      filters: getFiltersDataFromUrl(instance, true),
-      itemsPerPage: Number.parseInt(query.itemsPerPage as string, 10) || 20,
-      page: Number.parseInt(query.page as string, 10) || 1,
-      sort: query.sort as string || '',
-      term: query.term as string,
+      collectionSlug: categorySlug,
+      take: parseInt(query.itemsPerPage, 10) || 20,
+      groupByProduct: true,
+      sort: { price: query.sort || 'ASC'},
+      facetValueIds: query.attributes || []
     };
   };
-
-  const changeSearchTerm = (term: string) => term;
 
   const getSearchTermFromUrl = () => {
-    const { query } = route;
+    const { query, params } = instance.$router.history.current;
+    // hardcoded categorySlug for search results
+    const categorySlug = 'women-clothing-jackets';
 
     return {
-      page: Number.parseInt(query.page as string, 10) || 1,
-      sort: query.sort || '',
+      rootCatSlug: params.slug_1,
+      categorySlug,
+      page: parseInt(query.page, 10) || 1,
+      sort: query.sort || 'latest',
       filters: getFiltersDataFromUrl(instance, true),
-      itemsPerPage: Number.parseInt(query.itemsPerPage as string, 10) || 20,
-      term: query.term,
+      itemsPerPage: parseInt(query.itemsPerPage, 10) || 20,
+      phrase: query.phrase
     };
   };
 
-  const getCatLink = (category: Category): string => `/c/${category.url_path}${category.url_suffix || ''}`;
+  const doesUrlIncludesCategory = (categorySlug) => {
+    const paramSlugs = Object.values(instance.$route.params);
+    return paramSlugs.includes(categorySlug);
+  };
 
-  const getAgnosticCatLink = (category: AgnosticCategoryTree): string => `/c${category.slug}`;
+  const getLastSlugFromParams = () => {
+    const params = Object.values(instance.$route.params);
+    const truthySlugs = params.filter(param => Boolean(param));
+    return truthySlugs[truthySlugs.length - 1];
+  };
+
+  const getCatLink = (category): string => {
+    const urlCategorySlug = instance.$route.params.slug_1;
+    return urlCategorySlug.includes(category.slug) ? `/c/${urlCategorySlug}` : `/c/${urlCategorySlug}/${category.slug}`;
+  };
+
+  const getFormattedBreadcrumbs = (breadcrumbs) => {
+    const urlCategorySlug = instance.$route.params.slug_1;
+    return breadcrumbs?.map(breadcrumb => ({
+      text: breadcrumb?.text,
+      link: breadcrumb?.link === urlCategorySlug ? `/c/${breadcrumb?.link}` : breadcrumb?.link
+    }));
+  };
 
   const changeSorting = (sort: string) => {
-    // @ts-ignore
-    const { query } = route;
+    const { query } = instance.$router.history.current;
     instance.$router.push({ query: { ...query, sort } });
   };
 
@@ -67,8 +91,8 @@ const useUiHelpers = () => {
     instance.$router.push({
       query: {
         ...getFiltersDataFromUrl(instance, false),
-        ...filters,
-      },
+        ...filters
+      }
     });
   };
 
@@ -76,8 +100,8 @@ const useUiHelpers = () => {
     instance.$router.push({
       query: {
         ...getFiltersDataFromUrl(instance, false),
-        itemsPerPage,
-      },
+        itemsPerPage
+      }
     });
   };
 
@@ -85,8 +109,8 @@ const useUiHelpers = () => {
     instance.$router.push({
       query: {
         ...getFiltersDataFromUrl(instance, false),
-        term: term || undefined,
-      },
+        phrase: term || undefined
+      }
     });
   };
 
@@ -97,7 +121,6 @@ const useUiHelpers = () => {
   return {
     getFacetsFromURL,
     getCatLink,
-    getAgnosticCatLink,
     changeSorting,
     changeFilters,
     changeItemsPerPage,
@@ -105,7 +128,9 @@ const useUiHelpers = () => {
     isFacetColor,
     isFacetCheckbox,
     getSearchTermFromUrl,
-    changeSearchTerm,
+    doesUrlIncludesCategory,
+    getLastSlugFromParams,
+    getFormattedBreadcrumbs
   };
 };
 

@@ -5,7 +5,7 @@
         <SfSteps
           v-if="!isThankYou"
           :active="currentStepIndex"
-          :class="{ 'checkout__steps': true }"
+          class="checkout__steps"
           @change="handleStepClick"
         >
           <SfStep
@@ -29,34 +29,34 @@
     </div>
   </div>
 </template>
-<script lang="ts">
-import { SfSteps } from '@storefront-ui/vue';
-import { computed, defineComponent, ref } from '@vue/composition-api';
-import CartPreview from '~/components/Checkout/CartPreview.vue';
-import { useVueRouter } from '~/helpers/hooks/useVueRouter';
+<script>
 
-export default defineComponent({
+import { SfSteps, SfButton } from '@storefront-ui/vue';
+import CartPreview from '~/components/Checkout/CartPreview';
+import { computed } from '@vue/composition-api';
+
+const STEPS = {
+  customer: 'Customer',
+  shipping: 'Shipping',
+  billing: 'Billing',
+  payment: 'Payment'
+};
+
+export default {
   name: 'Checkout',
   components: {
+    SfButton,
     SfSteps,
-    CartPreview,
+    CartPreview
   },
-  setup() {
-    const { route, router } = useVueRouter();
-    const currentStep = computed(() => route.path.split('/').pop());
-    const STEPS = ref({
-      'user-account': 'User Account',
-      shipping: 'Shipping',
-      billing: 'Billing',
-      payment: 'Payment',
-    });
-    const currentStepIndex = computed(() => Object.keys(STEPS.value)
-      .indexOf(currentStep.value));
+  setup(props, context) {
+    const currentStep = computed(() => context.root.$route.path.split('/').pop());
+    const currentStepIndex = computed(() => Object.keys(STEPS).findIndex(s => s === currentStep.value));
     const isThankYou = computed(() => currentStep.value === 'thank-you');
 
     const handleStepClick = (stepIndex) => {
-      const key = Object.keys(STEPS.value)[stepIndex];
-      router.push(`/checkout/${key}`);
+      const key = Object.keys(STEPS)[stepIndex];
+      context.root.$router.push(`/checkout/${key}`);
     };
 
     return {
@@ -64,10 +64,10 @@ export default defineComponent({
       STEPS,
       currentStepIndex,
       isThankYou,
-      currentStep,
+      currentStep
     };
-  },
-});
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -78,34 +78,29 @@ export default defineComponent({
     margin: 0 auto;
   }
 }
-
 .checkout {
   @include for-desktop {
     display: flex;
   }
-
   &__main {
     @include for-desktop {
       flex: 1;
       padding: var(--spacer-xl) 0 0 0;
     }
   }
-
   &__aside {
     @include for-desktop {
       flex: 0 0 25.5rem;
       margin: 0 0 0 4.25rem;
     }
   }
-
   &__steps {
     --steps-content-padding: 0 var(--spacer-base);
+    ::v-deep .sf-steps__step.is-done  {
+      color: var(--c-primary);
+    }
     @include for-desktop {
       --steps-content-padding: 0;
-    }
-
-    &-auth::v-deep .sf-steps__step:first-child {
-      --steps-step-color: #e8e4e4;
     }
   }
 }
