@@ -15,6 +15,11 @@
       </SfHero>
     </LazyHydrate>
 
+
+    <div v-if="story">
+      <render-content :content="story.content.body" />
+    </div>
+
     <LazyHydrate when-visible>
       <SfBannerGrid :banner-grid="1" class="banner-grid">
         <template v-for="item in banners" v-slot:[item.slot]>
@@ -107,6 +112,10 @@ import {
 import InstagramFeed from '~/components/InstagramFeed.vue';
 import MobileStoreBanner from '~/components/MobileStoreBanner.vue';
 import LazyHydrate from 'vue-lazy-hydration';
+import { useContent, storyblokBridge } from '@vue-storefront/storyblok'
+import RenderContent from '~/cms/RenderContent.vue'
+import { onSSR } from '@vue-storefront/core';
+import { computed, onMounted } from '@vue/composition-api';
 
 export default {
   name: 'Home',
@@ -124,7 +133,25 @@ export default {
     SfArrow,
     SfButton,
     MobileStoreBanner,
-    LazyHydrate
+    LazyHydrate,
+    RenderContent
+  },
+  setup() {
+    const { search, content } = useContent('SLUG')
+
+    const story = computed(() => content.value)
+
+    onSSR(async () => {
+      await search({ slug: 'home' })
+    });
+
+    onMounted(() => {
+      storyblokBridge(story.value, ['input', 'published', 'change'])
+    })
+
+    return {
+      story
+    }
   },
   data() {
     return {
