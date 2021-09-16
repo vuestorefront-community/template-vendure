@@ -6,17 +6,17 @@
     :button-text="banner_text"
     :link="banner_link"
     :image="image"
-    :background="background"
   />
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue'
 import { SfBanner } from '@storefront-ui/vue';
 
-export default {
+export default Vue.extend({
   name: 'Banner',
   components: {
-    SfBanner,
+    SfBanner
   },
   props: {
     title: {},
@@ -27,5 +27,5 @@ export default {
     image: {},
     background: {}
   }
-}
+})
 </script>

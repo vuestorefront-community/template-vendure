@@ -15,10 +15,7 @@
       </SfHero>
     </LazyHydrate>
 
-
-    <div v-if="story">
-      <render-content :content="story.content.body" />
-    </div>
+    <render-content :content="story.content.body" />
 
     <LazyHydrate when-visible>
       <SfBannerGrid :banner-grid="1" class="banner-grid">
@@ -134,15 +131,15 @@ export default {
     SfButton,
     MobileStoreBanner,
     LazyHydrate,
-    RenderContent
+    RenderContent,
   },
   setup() {
-    const { search, content } = useContent('SLUG')
+    const { search, content } = useContent('home')
 
     const story = computed(() => content.value)
 
     onSSR(async () => {
-      await search({ slug: 'home' })
+      await search({ slug: `home?cv=${Math.floor(Date.now()/1000)}` })
     });
 
     onMounted(() => {

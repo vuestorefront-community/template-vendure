@@ -134,6 +134,7 @@ export default {
         .forEach((route) => routes.unshift(route));
     }
   },
+  plugins: ['~/plugins/cms'],
   build: {
     babel: {
       plugins: [
