@@ -5,7 +5,7 @@ import theme from './themeConfig';
 export default {
   server: {
     port: 3001,
-    host: '0.0.0.0'
+    host: 'localhost'
   },
   head: {
     title: 'Vue Storefront',
