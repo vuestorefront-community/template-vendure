@@ -1,5 +1,7 @@
-import { Logger } from '@vue-storefront/core';
-
-export default () => {
-  Logger.error('Please implement vendor specific is-authenticated.js middleware in \'middleware\' directory to protect user profile routes from guest users.');
+export default async ({ app, $vsf }) => {
+  try {
+    await $vsf.$vendure.api.getMe();
+  } catch (error) {
+    if (error) app.context.redirect('/');
+  }
 };
