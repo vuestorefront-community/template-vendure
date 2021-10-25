@@ -45,7 +45,7 @@ import {
 } from '@storefront-ui/vue';
 import { ref, onMounted } from '@vue/composition-api';
 import { usePaymentProviderMock } from '@/composables/usePaymentProviderMock';
-import { useVSFContext } from '@vue-storefront/core';
+import { usePayment } from '@vue-storefront/vendure';
 
 export default {
   name: 'VsfPaymentProvider',
@@ -57,7 +57,7 @@ export default {
   setup (_, { emit }) {
     const { status } = usePaymentProviderMock();
     const selectedPaymentMethod = ref({});
-    const { $vendure } = useVSFContext();
+    const { methods, load } = usePayment();
     const paymentMethods = ref([]);
 
     const selectPaymentMethod = async (paymentMethod) => {
@@ -67,9 +67,9 @@ export default {
     };
 
     onMounted(async () => {
-      const response = await $vendure.api.getPaymentMethods();
+      await load();
 
-      paymentMethods.value = response?.data?.eligiblePaymentMethods;
+      paymentMethods.value = methods.value;
     });
 
     return {

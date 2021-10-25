@@ -14,12 +14,31 @@
       </p>
     </SfTab>
 
+    <!-- Email update -->
+    <SfTab title="Email data">
+      <p class="message">
+        {{ $t('Feel free to edit') }}
+      </p>
+
+      <EmailUpdateForm @submit="updateEmailData" />
+
+      <p class="notice">
+        {{ $t('Use your personal data') }}
+        <a href="">{{ $t('Privacy Policy') }}</a>
+      </p>
+    </SfTab>
+
     <!-- Password reset -->
     <SfTab title="Password change">
       <p class="message">
         {{ $t('Change password your account') }}:<br />
         {{ $t('Your current email address is') }}
-        <span class="message__label">example@email.com</span>
+        <span
+          v-e2e="'myaccount-message-email'"
+          class="message__label"
+        >
+          {{currentEmail}}
+        </span>
       </p>
 
       <PasswordResetForm @submit="updatePassword" />
@@ -32,48 +51,43 @@ import { extend } from 'vee-validate';
 import { email, required, min, confirmed } from 'vee-validate/dist/rules';
 import ProfileUpdateForm from '~/components/MyAccount/ProfileUpdateForm';
 import PasswordResetForm from '~/components/MyAccount/PasswordResetForm';
+import EmailUpdateForm from '~/components/MyAccount/EmailUpdateForm';
 import { SfTabs, SfInput, SfButton } from '@storefront-ui/vue';
-import { useUser } from '@vue-storefront/vendure';
-
+import { useUser, userGetters } from '@vue-storefront/vendure';
+import { onMounted } from '@vue/composition-api';
 extend('email', {
   ...email,
   message: 'Invalid email'
 });
-
 extend('required', {
   ...required,
   message: 'This field is required'
 });
-
 extend('min', {
   ...min,
   message: 'The field should have at least {length} characters'
 });
-
 extend('password', {
   validate: value => String(value).length >= 8 && String(value).match(/[A-Za-z]/gi) && String(value).match(/[0-9]/gi),
   message: 'Password must have at least 8 characters including one letter and a number'
 });
-
 extend('confirmed', {
   ...confirmed,
   message: 'Passwords don\'t match'
 });
-
 export default {
   name: 'PersonalDetails',
-
   components: {
     SfTabs,
     SfInput,
     SfButton,
     ProfileUpdateForm,
-    PasswordResetForm
+    PasswordResetForm,
+    EmailUpdateForm
   },
-
   setup() {
-    const { updateUser, changePassword } = useUser();
-
+    const { updateUser, changePassword, user, load, updateEmail } = useUser();
+    const currentEmail = userGetters.getEmailAddress(user.value);
     const formHandler = async (fn, onComplete, onError) => {
       try {
         const data = await fn();
@@ -82,13 +96,18 @@ export default {
         onError(error);
       }
     };
-
     const updatePersonalData = ({ form, onComplete, onError }) => formHandler(() => updateUser({ user: form.value }), onComplete, onError);
-    const updatePassword = ({ form, onComplete, onError }) => formHandler(() => changePassword({ current: form.value.currentPassword, new: form.value.newPassword }), onComplete, onError);
-
+    const updateEmailData = ({ form, onComplete, onError }) => formHandler(() => updateEmail({ user: form.value }), onComplete, onError);
+    const updatePassword = ({ form, onComplete, onError }) => formHandler(() => changePassword({ currentPassword: form.value.currentPassword, newPassword: form.value.newPassword }), onComplete, onError);
+    onMounted(async () => {
+      await load();
+    });
     return {
+      currentEmail,
       updatePersonalData,
-      updatePassword
+      updatePassword,
+      updateEmailData,
+      user
     };
   }
 };
@@ -111,5 +130,4 @@ export default {
   margin: var(--spacer-lg) 0 0 0;
   font-size: var(--font-size--sm);
 }
-
 </style>

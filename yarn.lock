@@ -2477,10 +2477,10 @@
     lodash "^4.17.15"
     nuxt-purgecss "^1.0.0"
 
-"@vue-storefront/vendure-api@1.0.0-beta.2":
-  version "1.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure-api/-/vendure-api-1.0.0-beta.2.tgz#9316fbcb597fb1079db2012486660a503c9090d7"
-  integrity sha512-uAGnnh6B1huMWcWhRLZK7Q4hLV+RDm4y1vXM+un9OsSMmZKVrar0aHEyg69+z/2S2GlJ42kAzcI4BNw5xU9FjA==
+"@vue-storefront/vendure-api@1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "http://localhost:4873/@vue-storefront%2fvendure-api/-/vendure-api-1.0.0-beta.3.tgz#3d50d0c48e0838219c50316298899e0a44c43ba2"
+  integrity sha512-7lFYTBD0uzgiWbHiJEqzGv5UTIZJaqrN63BNH1FqirSCimO5Lyr1TcJrhPIqFf20gvigbKUII4dIQr1mqaErkQ==
   dependencies:
     "@vue-storefront/core" "~2.4.1"
     apollo-cache-inmemory "^1.6.6"
@@ -2494,13 +2494,13 @@
     graphql-tag "^2.12.5"
     isomorphic-fetch "^3.0.0"
 
-"@vue-storefront/vendure@1.0.0-beta.2":
-  version "1.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure/-/vendure-1.0.0-beta.2.tgz#86443a893c8ace2ac5d379dca2c1767bcad7804d"
-  integrity sha512-NVbSvN8KM0v3Bd2LDJYbHpeYMDWMw4ywPu4urD/EyXMns/IQUOYaTmyzc/i/mc1Dc6eV6sYMw/DnBKTFgZ8K5w==
+"@vue-storefront/vendure@^1.0.0-beta.3":
+  version "1.0.0-beta.3"
+  resolved "http://localhost:4873/@vue-storefront%2fvendure/-/vendure-1.0.0-beta.3.tgz#ad301f3ffc75947a16e489caa2adc8288d62951d"
+  integrity sha512-32a8VKK9H755fmR4BPGcCh8kXT75ybSWzlMHNMc8WtLwoLv0dfX1tWRSj3pzsg/o+1WCW0Z+viYRud2/hKJOPQ==
   dependencies:
     "@vue-storefront/core" "~2.4.1"
-    "@vue-storefront/vendure-api" "1.0.0-beta.2"
+    "@vue-storefront/vendure-api" "1.0.0-beta.3"
 
 "@vue/babel-helper-vue-jsx-merge-props@^1.2.1":
   version "1.2.1"
