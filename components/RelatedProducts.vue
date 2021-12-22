@@ -7,11 +7,10 @@
       >
         <SfCarouselItem class="carousel__item" v-for="(product, i) in products" :key="i">
           <SfProductCard
-            :title="productGetters.getName(product)"
-            :image="productGetters.getCoverImage(product)"
-            :regular-price="$n(productGetters.getPrice(product).regular, 'currency')"
-            :special-price="productGetters.getPrice(product).special && $n(productGetters.getPrice(product).special, 'currency')"
-            :link="localePath(`/p/${productGetters.getId(product)}/${productGetters.getSlug(product)}`)"
+            :title="product.productName"
+            :image="product.productAsset.preview"
+            :regular-price="$n(getCalculatedPrice(product.price.max), 'currency')"
+            :link="localePath(`/p/${product.productId}/${product.slug}`)"
           />
         </SfCarouselItem>
       </SfCarousel>
@@ -20,20 +19,17 @@
 </template>
 
 <script lang="ts">
-
 import {
   SfCarousel,
   SfProductCard,
   SfSection,
   SfLoader
 } from '@storefront-ui/vue';
-
-import { productGetters } from '@vue-storefront/vendure';
-
+import { getCalculatedPrice } from '~/helpers';
 export default {
   name: 'RelatedProducts',
   setup() {
-    return { productGetters };
+    return { getCalculatedPrice };
   },
   components: {
     SfCarousel,
@@ -53,15 +49,16 @@ export default {
 .section {
   margin-top: var(--spacer-base);
 }
-
 .carousel {
-    margin: 0 calc(var(--spacer-sm) * -1) 0 0;
+    margin: 0 calc(-1 * var(--spacer-sm)) 0 0;
   @include for-desktop {
     margin: 0;
   }
   &__item {
     margin: 1.9375rem 0 2.4375rem 0;
   }
+  ::v-deep .sf-product-card__image .sf-image {
+    --image-height: unset;
+  }
 }
-
 </style>

@@ -2,14 +2,30 @@
   <SfFooter :column="4" multiple class="footer">
     <SfFooterColumn :title="$t('About us')">
       <SfList>
-        <SfListItem
-          v-for="item in aboutUs"
-          :key="item"
-          >
-          <SfMenuItem
-            :label="$t(item)"
-          />
-        </SfListItem>
+        <SfListItem>
+            <router-link to="/page/about" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Who we are')"
+              />
+            </router-link>
+          </SfListItem>
+          <SfListItem>
+            <router-link to="/page/quality" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Quality in the details')"
+              />
+            </router-link>
+          </SfListItem>
+          <SfListItem>
+            <router-link to="/page/reviews" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Customer reviews')"
+              />
+            </router-link>
+          </SfListItem>
       </SfList>
     </SfFooterColumn>
     <SfFooterColumn :title="$t('Departments')">
@@ -26,26 +42,50 @@
     </SfFooterColumn>
     <SfFooterColumn :title="$t('Help')">
       <SfList>
-        <SfListItem
-          v-for="item in help"
-          :key="item"
-        >
-          <SfMenuItem
-            :label="$t(item)"
-          />
-        </SfListItem>
+        <SfListItem>
+            <router-link to="/page/customer" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Customer service')"
+              />
+            </router-link>
+          </SfListItem>
+          <SfListItem>
+            <router-link to="/page/size" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Size guide')"
+              />
+            </router-link>
+          </SfListItem>
+          <SfListItem>
+            <router-link to="/page/contact" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Contact us')"
+              />
+            </router-link>
+          </SfListItem>
       </SfList>
     </SfFooterColumn>
     <SfFooterColumn :title="$t('Payment & Delivery')">
       <SfList>
-        <SfListItem
-          v-for="item in paymentsDelivery"
-          :key="item"
-        >
-          <SfMenuItem
-            :label="$t(item)"
-          />
-        </SfListItem>
+        <SfListItem>
+            <router-link to="/page/terms" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Purchase terms')"
+              />
+            </router-link>
+          </SfListItem>
+          <SfListItem>
+            <router-link to="/page/guarantee" exact>
+              <SfMenuItem
+                class="sf-footer__menu-item"
+                :label="$t('Guarantee')"
+              />
+            </router-link>
+          </SfListItem>
       </SfList>
     </SfFooterColumn>
     <SfFooterColumn title="Social">
@@ -58,7 +98,6 @@
 
 <script>
 import { SfFooter, SfList, SfImage, SfMenuItem } from '@storefront-ui/vue';
-
 export default {
   components: {
     SfFooter,
@@ -68,10 +107,7 @@ export default {
   },
   data() {
     return {
-      aboutUs: ['Who we are', 'Quality in the details', 'Customer Reviews'],
       departments: ['Women fashion', 'Men fashion', 'Kidswear', 'Home'],
-      help: ['Customer service', 'Size guide', 'Contact us'],
-      paymentsDelivery: ['Purchase terms', 'Guarantee'],
       social: ['facebook', 'pinterest', 'google', 'twitter', 'youtube'],
       isMobile: false,
       desktopMin: 1024
@@ -81,7 +117,6 @@ export default {
 </script>
 
 <style lang="scss">
-
 .footer {
   margin-bottom: 3.75rem;
   @include for-desktop {
