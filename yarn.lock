@@ -1929,21 +1929,22 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@storefront-ui/shared@0.10.8":
-  version "0.10.8"
-  resolved "https://registry.yarnpkg.com/@storefront-ui/shared/-/shared-0.10.8.tgz#1717f528a073dcebbd6115f587c3cf57a94ee86a"
-  integrity sha512-lRVqxs5QAOtXV129uNDSn0BYvjix0VXNZu2ChnQAu8jNKC/Q10cN1XrDiOEiL8hDpx7py+6DUka1WZ5K8dn+jQ==
+"@storefront-ui/shared@0.11.3":
+  version "0.11.3"
+  resolved "https://registry.yarnpkg.com/@storefront-ui/shared/-/shared-0.11.3.tgz#ad044bf36b664e89a1b96708cf7365aedde6f18a"
+  integrity sha512-vLxnnGwb2MOXe4tNPfT8c3ZWVTP6+cSiAfxEPprPnslMT9eq8XB+TBOOIz5aVeFmsCxKg3BVwHLUh5oITQlkrg==
 
-"@storefront-ui/vue@>=0.10.8 <0.10.71 || ^0.10.72":
-  version "0.10.8"
-  resolved "https://registry.yarnpkg.com/@storefront-ui/vue/-/vue-0.10.8.tgz#9d3e999a4beb2188cca397dcb7cc7b3d5d9a6207"
-  integrity sha512-+ePyaXITmGxWfDs4capCoTQoq76a38Q4UA9PEYgcBiCPeSOBXtAQ6NGOKooTK27y4m+2NLOyeh+kdsPSXlFVYg==
+"@storefront-ui/vue@0.11.3":
+  version "0.11.3"
+  resolved "https://registry.yarnpkg.com/@storefront-ui/vue/-/vue-0.11.3.tgz#0cfc50191c57368fd2002f1c06a0b4144fc33673"
+  integrity sha512-rbG0bgLY2FVEsP3Wd7WHMkZnTEhXYzgQvc/RY+bSovdZQwJvKuM1lFI0ribvUA3urzreZeDhEokuYgoWUQRkxw==
   dependencies:
     "@glidejs/glide" "^3.3.0"
-    "@storefront-ui/shared" "0.10.8"
+    "@storefront-ui/shared" "0.11.3"
     body-scroll-lock "^3.0.1"
     cloudinary-build-url "^0.1.1"
     core-js "^3.6.5"
+    glob "^7.1.4"
     hammerjs "^2.0.8"
     leaflet "^1.5.1"
     nouislider "^15.2.0"
@@ -2485,10 +2486,10 @@
     lodash "^4.17.15"
     nuxt-purgecss "^1.0.0"
 
-"@vue-storefront/vendure-api@1.0.0-beta.3":
-  version "1.0.0-beta.3"
-  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure-api/-/vendure-api-1.0.0-beta.3.tgz#d423f8ebde6e2e875ad2525f642b55284ca3efd5"
-  integrity sha512-IHIxW9AxBz/74wkBriZtWrGRUtf4cEnioQHPthUQhp1AOnfy5l9mTsPD6rO/ITZWYd0s8Ckks0gSzMPsFq625A==
+"@vue-storefront/vendure-api@1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure-api/-/vendure-api-1.0.0.tgz#d78b00dc541b8d65a011d2e45c61bb18ed4c81ed"
+  integrity sha512-qnREkGqA9ebAcxMTjcG3U0NMq4FP25HhrWFg1CdqDUQ1ZiUPh0FHvLqn8iDiI6SMIn3YzVpbjjR6ruy5/MCsdw==
   dependencies:
     "@vue-storefront/core" "~2.4.1"
     apollo-cache-inmemory "^1.6.6"
@@ -2502,13 +2503,13 @@
     graphql-tag "^2.12.5"
     isomorphic-fetch "^3.0.0"
 
-"@vue-storefront/vendure@^1.0.0-beta.3":
-  version "1.0.0-beta.3"
-  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure/-/vendure-1.0.0-beta.3.tgz#7bc2e07b26afc8c72086ca76338fe2f7102f302d"
-  integrity sha512-IXDeqdYclQFH2tCBo5uSywnwbCjZwnO0AmW0Cz60igwIhu3y4BfWTHoUsVXmFSVE4VYV5an6b6BbEqsd96tZcA==
+"@vue-storefront/vendure@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure/-/vendure-1.0.0.tgz#e2a9ae27a94fdd3d078eb7d3fe6ad87acc412827"
+  integrity sha512-qyWRNCWEXF48/E/9TbQ78+9zVZM9UhfG99TOMq2obAOw1pIZJtcitHjSDn00VtSCLtmJAwO8M06+bkISjXQnlw==
   dependencies:
     "@vue-storefront/core" "~2.4.1"
-    "@vue-storefront/vendure-api" "1.0.0-beta.3"
+    "@vue-storefront/vendure-api" "1.0.0"
 
 "@vue/babel-helper-vue-jsx-merge-props@^1.2.1":
   version "1.2.1"
@@ -3232,6 +3233,11 @@ autoprefixer@^9.6.1:
     picocolors "^0.2.1"
     postcss "^7.0.32"
     postcss-value-parser "^4.1.0"
+
+awesome-phonenumber@^2.51.2:
+  version "2.65.0"
+  resolved "https://registry.yarnpkg.com/awesome-phonenumber/-/awesome-phonenumber-2.65.0.tgz#de796a9137ba0dc35bc97c2b04039443b2cd40ad"
+  integrity sha512-89ilO11uABrE+4KAn8hOyhGl8kb7J5VhR/wgVzsQqTnfySw7UQ1+IH3bHW09mm3dIBu2DBM88tJGQ/wsoJV0+Q==
 
 aws-sign2@~0.7.0:
   version "0.7.0"
