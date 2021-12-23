@@ -13,7 +13,7 @@
         </p>
 
         <ShippingAddressForm
-          :address="activeAddress"
+          :address="mapAddressToAddressForm(activeAddress, 'shipping')"
           :isNew="isNewAddress"
           @submit="saveAddress" />
       </SfTab>
@@ -80,7 +80,7 @@ import ShippingAddressForm from '~/components/MyAccount/ShippingAddressForm';
 import { useUserShipping, userShippingGetters } from '@vue-storefront/vendure';
 import { ref, computed } from '@vue/composition-api';
 import { onSSR } from '@vue-storefront/core';
-
+import { mapAddressFormToAddress, mapAddressToAddressForm } from '~/helpers';
 export default {
   name: 'ShippingDetails',
   components: {
@@ -96,18 +96,15 @@ export default {
     const edittingAddress = ref(false);
     const activeAddress = ref(undefined);
     const isNewAddress = computed(() => !activeAddress.value);
-
     const changeAddress = (address = undefined) => {
       activeAddress.value = address;
       edittingAddress.value = true;
     };
-
     const removeAddress = address => deleteAddress({ address });
-
     const saveAddress = async ({ form, onComplete, onError }) => {
       try {
         const actionMethod = isNewAddress.value ? addAddress : updateAddress;
-        const data = await actionMethod({ address: form });
+        const data = await actionMethod({ address: mapAddressFormToAddress(form, 'shipping') });
         edittingAddress.value = false;
         activeAddress.value = undefined;
         await onComplete(data);
@@ -115,11 +112,9 @@ export default {
         onError(error);
       }
     };
-
     onSSR(async () => {
       await loadUserShipping();
     });
-
     return {
       changeAddress,
       updateAddress,
@@ -129,14 +124,14 @@ export default {
       addresses,
       edittingAddress,
       activeAddress,
-      isNewAddress
+      isNewAddress,
+      mapAddressToAddressForm
     };
   }
 };
 </script>
 
 <style lang='scss' scoped>
-
 .message {
   font-family: var(--font-family--primary);
   line-height: 1.6;
@@ -150,7 +145,6 @@ export default {
   display: flex;
   padding: var(--spacer-xl) 0;
   border-top: 1px solid var(--c-light);
-
   &:last-child {
     border-bottom: 1px solid var(--c-light);
   }
@@ -202,7 +196,6 @@ export default {
       &__title {
         display: none;
       }
-
       &__content {
         border: 0;
         padding: 0;

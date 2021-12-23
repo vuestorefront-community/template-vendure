@@ -13,7 +13,7 @@
         </p>
 
         <BillingAddressForm
-          :address="activeAddress"
+          :address="mapAddressToAddressForm(activeAddress, 'billing')"
           :isNew="isNewAddress"
           @submit="saveAddress" />
       </SfTab>
@@ -80,7 +80,7 @@ import BillingAddressForm from '~/components/MyAccount/BillingAddressForm';
 import { useUserBilling, userBillingGetters } from '@vue-storefront/vendure';
 import { ref, computed } from '@vue/composition-api';
 import { onSSR } from '@vue-storefront/core';
-
+import { mapAddressFormToAddress, mapAddressToAddressForm } from '~/helpers';
 export default {
   name: 'BillingDetails',
   components: {
@@ -96,18 +96,15 @@ export default {
     const edittingAddress = ref(false);
     const activeAddress = ref(undefined);
     const isNewAddress = computed(() => !activeAddress.value);
-
     const changeAddress = (address = undefined) => {
       activeAddress.value = address;
       edittingAddress.value = true;
     };
-
     const removeAddress = address => deleteAddress({ address });
-
     const saveAddress = async ({ form, onComplete, onError }) => {
       try {
         const actionMethod = isNewAddress.value ? addAddress : updateAddress;
-        const data = await actionMethod({ address: form });
+        const data = await actionMethod({ address: mapAddressFormToAddress(form, 'billing') });
         edittingAddress.value = false;
         activeAddress.value = undefined;
         await onComplete(data);
@@ -115,11 +112,9 @@ export default {
         onError(error);
       }
     };
-
     onSSR(async () => {
       await loadUserBilling();
     });
-
     return {
       changeAddress,
       updateAddress,
@@ -129,25 +124,23 @@ export default {
       addresses,
       edittingAddress,
       activeAddress,
-      isNewAddress
+      isNewAddress,
+      mapAddressToAddressForm
     };
   }
 };
 </script>
 
 <style lang='scss' scoped>
-
 .message {
   font-family: var(--font-family--primary);
   line-height: 1.6;
   font-size: var(--font-size--base);
   margin: 0 0 var(--spacer-base);
 }
-
 .billing-list {
   margin-bottom: var(--spacer-base);
 }
-
 .billing {
   display: flex;
   padding: var(--spacer-xl) 0;
@@ -203,7 +196,6 @@ export default {
       &__title {
         display: none;
       }
-
       &__content {
         border: 0;
         padding: 0;

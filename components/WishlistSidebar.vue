@@ -26,7 +26,6 @@
                 :image="wishlistGetters.getItemImage(product)"
                 :title="wishlistGetters.getItemName(product)"
                 :regular-price="$n(wishlistGetters.getItemPrice(product).regular, 'currency')"
-                :special-price="wishlistGetters.getItemPrice(product).special && $n(wishlistGetters.getItemPrice(product).special, 'currency')"
                 :stock="99999"
                 image-width="180"
                 image-height="200"
@@ -86,9 +85,7 @@ import {
 } from '@storefront-ui/vue';
 import { computed } from '@vue/composition-api';
 import { useWishlist, useUser, wishlistGetters } from '@vue-storefront/vendure';
-import { onSSR } from '@vue-storefront/core';
 import { useUiState } from '~/composables';
-
 export default {
   name: 'Wishlist',
   components: {
@@ -108,11 +105,7 @@ export default {
     const products = computed(() => wishlistGetters.getItems(wishlist.value));
     const totals = computed(() => wishlistGetters.getTotals(wishlist.value));
     const totalItems = computed(() => wishlistGetters.getTotalItems(wishlist.value));
-
-    onSSR(async () => {
-      await loadWishlist();
-    });
-
+    loadWishlist();
     return {
       isAuthenticated,
       products,
@@ -134,7 +127,6 @@ export default {
   --sidebar-top-padding: var(--spacer-lg) var(--spacer-base) 0 var(--spacer-base);
   --sidebar-content-padding: var(--spacer-lg) var(--spacer-base);
 }
-
 .my-wishlist {
   flex: 1;
   display: flex;
@@ -192,16 +184,13 @@ export default {
     justify-content: space-between;
   }
 }
-
 .sidebar-bottom {
   margin: auto 0 0 0;
 }
-
 .collected-product {
   margin: var(--spacer-base) 0;
   &__properties {
     margin: var(--spacer-sm) 0 0 0;
   }
 }
-
 </style>
