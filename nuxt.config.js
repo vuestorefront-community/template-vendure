@@ -23,7 +23,7 @@ export default {
     ]
   },
   loading: { color: '#fff' },
-  plugins: [],
+  plugins: [{ src: '~/plugins/stripe.js', ssr: false }],
   buildModules: [
     // to core
     '@nuxt/typescript-build',
