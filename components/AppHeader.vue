@@ -1,7 +1,7 @@
 <template>
   <div>
     <SfHeader
-      :class="{'header-on-top': isSearchOpen, 'sf-header--has-mobile-search': isMobileMenuOpen}"
+      :class="{'header-on-top': isSearchOpen, 'sf-header--has-mobile-search': !isMobileMenuOpen}"
       :is-nav-visible="isMobileMenuOpen"
     >
       <!-- TODO: add mobile view buttons after SFUI team PR -->
@@ -11,14 +11,33 @@
         </nuxt-link>
       </template>
       <template #navigation>
-        <SfHeaderNavigationItem
-          v-for="category in headerNavigation"
-          :key="category.name"
-          class="nav-item"
-          v-e2e="`app-header-${category.name}`"
-          :label="category.name"
-          :link="localePath(`/c/${category.link}`)"
-        />
+        <div class="sf-header__navigation desktop" v-if="!isMobile">
+          <SfHeaderNavigationItem
+            v-for="category in headerNavigation"
+            :key="category.name"
+            class="nav-item"
+            v-e2e="`app-header-${category.name}`"
+            :label="category.name"
+            :link="localePath(`/c/${category.link}`)"
+          />
+        </div>
+        <SfModal v-else :visible="isMobileMenuOpen" :title="$t('Menu')" @close="toggleMobileMenu">
+          <SfList>
+            <SfListItem
+              v-for="category in headerNavigation"
+              :key="category.name"
+              class="nav-item sf-header-navigation-item"
+              v-e2e="`app-header-url_${category.link}`"
+            >
+              <SfMenuItem
+                :label="category.name"
+                class="sf-header-navigation-item__menu-item"
+                :link="localePath(`/c/${category.link}`)"
+                @click.native="toggleMobileMenu"
+              />
+            </SfListItem>
+          </SfList>
+        </SfModal>
       </template>
       <template #aside>
         <LocaleSelector class="smartphone-only" />
@@ -27,8 +46,8 @@
         <div class="sf-header__icons">
           <SfButton
             v-e2e="'app-header-account'"
-            aria-label="Open account button"
             class="sf-button--pure sf-header__action"
+            aria-label="Open account button"
             @click="handleAccountClick"
           >
             <SfIcon
@@ -107,9 +126,9 @@
 </template>
 
 <script>
-import { SfHeader, SfImage, SfIcon, SfButton, SfBadge, SfSearchBar, SfOverlay, SfMenuItem, SfLink } from '@storefront-ui/vue';
+import { SfHeader, SfImage, SfIcon, SfButton, SfBadge, SfSearchBar, SfOverlay, SfMenuItem, SfLink, SfModal, SfList } from '@storefront-ui/vue';
 import { useUiState, useUiHelpers } from '~/composables';
-import { useCart, useWishlist, useUser, cartGetters, wishlistGetters, useCategory, categoryGetters } from '@vue-storefront/vendure';
+import { useCart, useWishlist, useUser, cartGetters, wishlistGetters, useCategory, categoryGetters, useFacet } from '@vue-storefront/vendure';
 import { computed, ref, onBeforeUnmount, watch } from '@vue/composition-api';
 import { onSSR } from '@vue-storefront/core';
 import LocaleSelector from '~/components/LocaleSelector';
@@ -120,7 +139,6 @@ import {
   unMapMobileObserver
 } from '@storefront-ui/vue/src/utilities/mobile-observer.js';
 import debounce from 'lodash.debounce';
-
 export default {
   components: {
     SfHeader,
@@ -133,70 +151,61 @@ export default {
     SearchResults,
     SfOverlay,
     SfMenuItem,
-    SfLink
+    SfLink,
+    SfModal,
+    SfList
   },
   directives: { clickOutside },
   setup(props, { root }) {
-    const { toggleCartSidebar, toggleWishlistSidebar, toggleLoginModal, isMobileMenuOpen } = useUiState();
+    const { toggleCartSidebar, toggleWishlistSidebar, toggleLoginModal, isMobileMenuOpen, toggleMobileMenu } = useUiState();
     const { setTermForUrl, getFacetsFromURL } = useUiHelpers();
     const { isAuthenticated, load: loadUser } = useUser();
     const { cart, load: loadCart } = useCart();
     const { wishlist, load: loadWishlist } = useWishlist();
     const { search, categories } = useCategory();
     const term = ref(getFacetsFromURL().phrase);
+    const { search: searchTerm, result: searchResult } = useFacet();
     const isSearchOpen = ref(false);
     const searchBarRef = ref(null);
     const result = ref(null);
-
     const cartTotalItems = computed(() => {
       const count = cartGetters.getTotalItems(cart.value);
       return count ? count.toString() : null;
     });
-
     const wishlistTotalItems = computed(() => {
       const count = wishlistGetters.getTotalItems(wishlist.value);
       return count ? count.toString() : null;
     });
-
     const accountIcon = computed(() => isAuthenticated.value ? 'profile_fill' : 'profile');
-
     // TODO: https://github.com/vuestorefront/vue-storefront/issues/4927
     const handleAccountClick = async () => {
       if (isAuthenticated.value) {
         return root.$router.push('/my-account');
       }
-
       toggleLoginModal();
     };
-
     onSSR(async () => {
       await loadUser();
       await loadCart();
       await loadWishlist();
       await search();
     });
-
     const headerNavigation = computed(() => categoryGetters.getNavigation(categories.value));
-
     const closeSearch = () => {
       if (!isSearchOpen.value) return;
-
       term.value = '';
       isSearchOpen.value = false;
     };
-
     const handleSearch = debounce(async (paramValue) => {
       if (!paramValue.target) {
         term.value = paramValue;
       } else {
         term.value = paramValue.target.value;
       }
-      result.value = { };
-
+      await searchTerm({ term: term.value});
+      result.value = searchResult;
     }, 1000);
-
     const isMobile = computed(() => mapMobileObserver().isMobile.get());
-
     const closeOrFocusSearchBar = () => {
       if (isMobile.value) {
         return closeSearch();
@@ -205,22 +214,18 @@ export default {
         return searchBarRef.value.$el.children[0].focus();
       }
     };
-
     watch(() => term.value, (newVal, oldVal) => {
       const shouldSearchBeOpened = (!isMobile.value && term.value.length > 0) && ((!oldVal && newVal) || (newVal.length !== oldVal.length && isSearchOpen.value === false));
       if (shouldSearchBeOpened) {
         isSearchOpen.value = true;
       }
     });
-
     const removeSearchResults = () => {
       result.value = null;
     };
-
     onBeforeUnmount(() => {
       unMapMobileObserver();
     });
-
     return {
       accountIcon,
       cartTotalItems,
@@ -239,7 +244,8 @@ export default {
       removeSearchResults,
       headerNavigation,
       isMobileMenuOpen,
-      wishlistTotalItems
+      wishlistTotalItems,
+      toggleMobileMenu
     };
   }
 };
@@ -264,7 +270,6 @@ export default {
 .nav-item {
   --header-navigation-item-margin: 0 var(--spacer-base);
 }
-
 .cart-badge {
   position: absolute;
   bottom: 40%;
