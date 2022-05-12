@@ -2451,6 +2451,18 @@
     lodash-es "^4.17.15"
     vue "^2.6.11"
 
+"@vue-storefront/core@~2.4.6":
+  version "2.4.6"
+  resolved "https://registry.yarnpkg.com/@vue-storefront/core/-/core-2.4.6.tgz#24d6f0d41b4d00715ebd44bbb08e7d5949534038"
+  integrity sha512-Iml0/uKMZFyMk6SiEcMxRnyndncNflAvKFC9sbfoN1hHUWDv3qLUk0+uCgkvIn6+0srx29zH3RH6+LjXHlC7nQ==
+  dependencies:
+    "@vue/composition-api" "1.0.0-beta.21"
+    axios "0.21.1"
+    express "^4.17.1"
+    is-https "^3.0.2"
+    lodash-es "^4.17.15"
+    vue "^2.6.11"
+
 "@vue-storefront/middleware@~2.4.1":
   version "2.4.5"
   resolved "https://registry.yarnpkg.com/@vue-storefront/middleware/-/middleware-2.4.5.tgz#00a8a8dd6a6a5726f3491551cfdf4d6238578bb9"
@@ -2486,12 +2498,12 @@
     lodash "^4.17.15"
     nuxt-purgecss "^1.0.0"
 
-"@vue-storefront/vendure-api@1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure-api/-/vendure-api-1.1.0.tgz#f8997dbd89f629bf3433f4cd86f3528e745781d9"
-  integrity sha512-BmV/i17cd1WU1/ZWW5kvlrmFvPAUt46yNLNbVcr1PltQtOFWgfphLmbe3wuRo0GwV9phC7C+3fAyVyyKDUwCMw==
+"@vue-storefront/vendure-api@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure-api/-/vendure-api-1.2.0.tgz#09c7d0f616027acd15320f8b13f2129c25843458"
+  integrity sha512-Ta4G59BwOdAuf8hVdvhU/pdKKMWcWa67FAFsjyLll6LtYdPyw+i2ET+xZdLxmgrLtQeglyv+qdCVvRu/i6J/UA==
   dependencies:
-    "@vue-storefront/core" "~2.4.1"
+    "@vue-storefront/core" "~2.4.6"
     apollo-cache-inmemory "^1.6.6"
     apollo-client "^2.6.10"
     apollo-link "^1.2.14"
@@ -2503,13 +2515,13 @@
     graphql-tag "^2.12.5"
     isomorphic-fetch "^3.0.0"
 
-"@vue-storefront/vendure@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure/-/vendure-1.1.0.tgz#12ccd5cd1f8d2578e051b38ffbdf1df317775edc"
-  integrity sha512-4IiHMbUnXDAr0xgdR9bf/JRmsWmMENClyMDACwdi7WkWxWBO08dBLsFw+duCdRpj35GGJ/P9kN290/HNnQY43A==
+"@vue-storefront/vendure@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@vue-storefront/vendure/-/vendure-1.2.0.tgz#63cdfdd949f86ca7478b4d7b6babda6984a838e0"
+  integrity sha512-8EY0u7ve5r7g40HpBgVosUtoKRJdBmkVc/GZKaJfygds/sekAKse/yqMBsKmkMMoc/EjveArE+ppKJQhbwcAkw==
   dependencies:
-    "@vue-storefront/core" "~2.4.1"
-    "@vue-storefront/vendure-api" "1.1.0"
+    "@vue-storefront/core" "~2.4.6"
+    "@vue-storefront/vendure-api" "1.2.0"
 
 "@vue/babel-helper-vue-jsx-merge-props@^1.2.1":
   version "1.2.1"

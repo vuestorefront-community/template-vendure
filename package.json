@@ -1,6 +1,6 @@
 {
   "name": "@vue-storefront/template-vendure",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "license": "MIT",
   "homepage": "docs.vuestorefront.io/vendure/",
@@ -32,7 +32,7 @@
     "@vue-storefront/middleware": "~2.4.1",
     "@vue-storefront/nuxt": "~2.4.1",
     "@vue-storefront/nuxt-theme": "~2.4.1",
-    "@vue-storefront/vendure": "^1.1.0",
+    "@vue-storefront/vendure": "^1.2.0",
     "awesome-phonenumber": "^2.51.2",
     "convict": "^6.2.0",
     "convict-format-with-validator": "^6.2.0",

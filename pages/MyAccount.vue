@@ -37,10 +37,6 @@
         <SfContentPage title="Order history">
           <OrderHistory />
         </SfContentPage>
-
-        <SfContentPage title="My reviews">
-          <MyReviews />
-        </SfContentPage>
       </SfContentCategory>
 
       <SfContentPage title="Log out" />
@@ -57,7 +53,6 @@ import BillingDetails from './MyAccount/BillingDetails';
 import LoyaltyCard from './MyAccount/LoyaltyCard';
 import MyNewsletter from './MyAccount/MyNewsletter';
 import OrderHistory from './MyAccount/OrderHistory';
-import MyReviews from './MyAccount/MyReviews';
 
 export default {
   name: 'MyAccount',
@@ -70,7 +65,6 @@ export default {
     LoyaltyCard,
     MyNewsletter,
     OrderHistory,
-    MyReviews
   },
   middleware: [
     'is-authenticated'

@@ -1,15 +1,19 @@
 <template>
 <!-- TODO: create logic with isActive prop for BottomNavigationItems -->
   <SfBottomNavigation class="navigation-bottom smartphone-only">
-    <nuxt-link to="/">
-      <SfBottomNavigationItem :class="$route.path == '/' ? 'sf-bottom-navigation__item--active' : ''" icon="home" size="20px" label="Home"/>
-    </nuxt-link>
-    <SfBottomNavigationItem icon="menu" size="20px" label="Menu"/>
-    <SfBottomNavigationItem icon="heart" size="20px" label="Wishlist" @click="toggleWishlistSidebar"/>
-    <SfBottomNavigationItem icon="profile" size="20px" label="Account" @click="handleAccountClick"/>
+      <SfBottomNavigationItem
+        :class="$route.path == '/' ? 'sf-bottom-navigation__item--active' : ''"
+        icon="home"
+        size="20px"
+        label="Home"
+        @click="handleHomeClick"
+      />
+    <SfBottomNavigationItem icon="menu" size="20px" :label="$t('Menu')" @click="toggleMobileMenu"/>
+    <SfBottomNavigationItem icon="heart" size="20px" :label="$t('Wishlist')" @click="toggleWishlistSidebar"/>
+    <SfBottomNavigationItem icon="profile" size="20px" :label="$t('Account')" @click="handleAccountClick"/>
     <!-- TODO: add logic for label - if on Home then Basket, if on PDC then AddToCart etc. -->
     <SfBottomNavigationItem
-      label="Basket"
+      :label="$t('Basket')"
       icon="add_to_cart"
       @click="toggleCartSidebar"
     >
@@ -31,7 +35,6 @@
 import { SfBottomNavigation, SfIcon, SfCircleIcon } from '@storefront-ui/vue';
 import { useUiState } from '~/composables';
 import { useUser } from '@vue-storefront/vendure';
-
 export default {
   components: {
     SfBottomNavigation,
@@ -39,20 +42,25 @@ export default {
     SfCircleIcon
   },
   setup(props, { root }) {
-    const { toggleCartSidebar, toggleWishlistSidebar, toggleLoginModal } = useUiState();
+    const { toggleCartSidebar, toggleWishlistSidebar, toggleLoginModal, toggleMobileMenu, isMobileMenuOpen } = useUiState();
     const { isAuthenticated } = useUser();
-
     const handleAccountClick = async () => {
       if (isAuthenticated.value) {
         return root.$router.push('/my-account');
       }
       toggleLoginModal();
     };
-
+    const handleHomeClick = () => {
+      isMobileMenuOpen.value ? toggleMobileMenu() : false;
+      root.$router.push('/');
+    };
     return {
+      isMobileMenuOpen,
       toggleWishlistSidebar,
       toggleCartSidebar,
-      handleAccountClick
+      toggleMobileMenu,
+      handleAccountClick,
+      handleHomeClick
     };
   }
 };
