@@ -1,5 +1,5 @@
-import Vue from 'vue';
-import VueCompositionAPI, { reactive, computed } from '@vue/composition-api';
+import Vue from "vue";
+import VueCompositionAPI, { reactive, computed } from "@vue/composition-api";
 
 // We need to register it again because of Vue instance instantiation issues
 Vue.use(VueCompositionAPI);
@@ -9,7 +9,8 @@ const state = reactive({
   isWishlistSidebarOpen: false,
   isLoginModalOpen: false,
   isCategoryGridView: true,
-  isFilterSidebarOpen: false
+  isFilterSidebarOpen: false,
+  isMobileMenuOpen: false,
 });
 
 const useUiState = () => {
@@ -41,18 +42,25 @@ const useUiState = () => {
     state.isFilterSidebarOpen = !state.isFilterSidebarOpen;
   };
 
+  const isMobileMenuOpen = computed(() => state.isMobileMenuOpen);
+  const toggleMobileMenu = () => {
+    state.isMobileMenuOpen = !state.isMobileMenuOpen;
+  };
+
   return {
     isCartSidebarOpen,
     isWishlistSidebarOpen,
     isLoginModalOpen,
     isCategoryGridView,
     isFilterSidebarOpen,
+    isMobileMenuOpen,
     toggleCartSidebar,
     toggleWishlistSidebar,
     toggleLoginModal,
     changeToCategoryGridView,
     changeToCategoryListView,
-    toggleFilterSidebar
+    toggleFilterSidebar,
+    toggleMobileMenu,
   };
 };
 
